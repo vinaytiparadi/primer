@@ -12,16 +12,11 @@ export async function GET(req: NextRequest) {
     const limit = parseInt(searchParams.get("limit") ?? "20");
     const categoryId = searchParams.get("category");
     const favorite = searchParams.get("favorite");
-    const tag = searchParams.get("tag");
     const sort = searchParams.get("sort") ?? "updatedAt";
-
     const where = {
         userId: session.user.id,
         ...(categoryId && { categoryId }),
         ...(favorite === "true" && { isFavorite: true }),
-        ...(tag && {
-            tags: { some: { tag: { name: tag } } },
-        }),
     };
 
     const orderBy =
@@ -37,7 +32,6 @@ export async function GET(req: NextRequest) {
             include: {
                 category: true,
                 versions: { orderBy: { createdAt: "asc" } },
-                tags: { include: { tag: true } },
             },
             orderBy,
             skip: (page - 1) * limit,
@@ -82,15 +76,9 @@ export async function POST(req: NextRequest) {
                     systemPrompt: body.systemPrompt || null,
                 },
             },
-            ...(body.tags?.length && {
-                tags: {
-                    create: body.tags.map((tagId: string) => ({ tagId })),
-                },
-            }),
         },
         include: {
             versions: true,
-            tags: { include: { tag: true } },
             category: true,
         },
     });

@@ -31,7 +31,6 @@ export default async function DashboardPage() {
                 include: {
                     category: true,
                     versions: { take: 1, orderBy: { createdAt: "desc" } },
-                    tags: { include: { tag: true } },
                 },
             }),
         ]);
@@ -94,7 +93,7 @@ export default async function DashboardPage() {
                         </div>
                         <h3 className="mt-4 text-lg font-semibold">No prompts yet</h3>
                         <p className="mb-4 mt-2 text-sm text-muted-foreground max-w-sm mx-auto">
-                            Create your first prompt to get started. Organize them with categories and tags.
+                            Create your first prompt to get started. Organize them with categories.
                         </p>
                         <Button asChild>
                             <Link href="/prompts/new">Create Prompt</Link>

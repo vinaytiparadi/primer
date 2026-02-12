@@ -17,7 +17,6 @@ export async function GET(
         include: {
             category: true,
             versions: { orderBy: { createdAt: "asc" } },
-            tags: { include: { tag: true } },
         },
     });
 
@@ -63,7 +62,6 @@ export async function PATCH(
         include: {
             category: true,
             versions: { orderBy: { createdAt: "asc" } },
-            tags: { include: { tag: true } },
         },
     });
 

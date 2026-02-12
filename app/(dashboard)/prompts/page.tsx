@@ -39,7 +39,6 @@ interface Prompt {
     updatedAt: string;
     category: { id: string; name: string; color: string | null } | null;
     versions: { id: string; modelTarget: string; versionLabel: string; isActive: boolean }[];
-    tags: { tag: { id: string; name: string } }[];
 }
 
 interface Category {

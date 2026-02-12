@@ -30,7 +30,6 @@ export async function GET(req: NextRequest) {
         include: {
             category: true,
             versions: { take: 1, orderBy: { createdAt: "desc" } },
-            tags: { include: { tag: true } },
         },
         orderBy: { updatedAt: "desc" },
         take: 20,

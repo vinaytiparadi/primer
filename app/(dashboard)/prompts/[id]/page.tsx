@@ -65,7 +65,6 @@ interface PromptData {
     usageCount: number;
     category: Category | null;
     versions: Version[];
-    tags: { tag: { id: string; name: string } }[];
 }
 
 export default function PromptDetailPage() {
@@ -265,12 +264,6 @@ export default function PromptDetailPage() {
                                 <DropdownMenuItem onClick={() => updateCategory(null)}>None</DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>
-
-                        {prompt.tags.map((t) => (
-                            <Badge key={t.tag.id} variant="outline" className="text-xs font-normal">
-                                {t.tag.name}
-                            </Badge>
-                        ))}
                     </div>
                 </div>
 

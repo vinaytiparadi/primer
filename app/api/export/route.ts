@@ -14,24 +14,21 @@ export async function GET(req: NextRequest) {
         include: {
             category: true,
             versions: true,
-            tags: { include: { tag: true } },
         },
         orderBy: { updatedAt: "desc" },
     });
 
     if (format === "csv") {
-        const headers = "Title,Description,Category,Model,Content,Tags\n";
+        const headers = "Title,Description,Category,Model,Content\n";
         const rows = prompts
             .map((p) => {
                 const version = p.versions[0];
-                const tags = p.tags.map((t) => t.tag.name).join(";");
                 return [
                     `"${(p.title || "").replace(/"/g, '""')}"`,
                     `"${(p.description || "").replace(/"/g, '""')}"`,
                     `"${p.category?.name || ""}"`,
                     `"${version?.modelTarget || ""}"`,
                     `"${(version?.content || "").replace(/"/g, '""')}"`,
-                    `"${tags}"`,
                 ].join(",");
             })
             .join("\n");
@@ -56,7 +53,6 @@ export async function GET(req: NextRequest) {
             systemPrompt: v.systemPrompt,
             notes: v.notes,
         })),
-        tags: p.tags.map((t) => t.tag.name),
     }));
 
     return new NextResponse(JSON.stringify(data, null, 2), {
