@@ -1,0 +1,179 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Auth Models (managed by NextAuth) ───────────────────
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  passwordHash  String?
+  image         String?
+  emailVerified DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts    Account[]
+  sessions    Session[]
+  prompts     Prompt[]
+  categories  Category[]
+  collections Collection[]
+  tags        Tag[]
+
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+// ─── App Models ──────────────────────────────────────────
+
+model Category {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String
+  description String?
+  color       String?
+  icon        String?
+  sortOrder   Int      @default(0)
+  userId      String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  prompts Prompt[]
+
+  @@unique([userId, slug])
+  @@map("categories")
+}
+
+model Prompt {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  isFavorite  Boolean  @default(false)
+  isPinned    Boolean  @default(false)
+  usageCount  Int      @default(0)
+  userId      String
+  categoryId  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user        User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category    Category?               @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  versions    PromptVersion[]
+  tags        TagsOnPrompts[]
+  collections CollectionsOnPrompts[]
+
+  @@index([userId, updatedAt(sort: Desc)])
+  @@map("prompts")
+}
+
+model PromptVersion {
+  id            String   @id @default(cuid())
+  promptId      String
+  versionLabel  String
+  modelTarget   String
+  content       String   @db.Text
+  systemPrompt  String?  @db.Text
+  variables     Json?
+  notes         String?
+  tokenEstimate Int?
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  prompt Prompt @relation(fields: [promptId], references: [id], onDelete: Cascade)
+
+  @@index([promptId, modelTarget])
+  @@map("prompt_versions")
+}
+
+model Tag {
+  id     String @id @default(cuid())
+  name   String
+  userId String
+
+  user    User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  prompts TagsOnPrompts[]
+
+  @@unique([userId, name])
+  @@map("tags")
+}
+
+model TagsOnPrompts {
+  promptId String
+  tagId    String
+
+  prompt Prompt @relation(fields: [promptId], references: [id], onDelete: Cascade)
+  tag    Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([promptId, tagId])
+  @@map("tags_on_prompts")
+}
+
+model Collection {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  userId      String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user    User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  prompts CollectionsOnPrompts[]
+
+  @@map("collections")
+}
+
+model CollectionsOnPrompts {
+  collectionId String
+  promptId     String
+  sortOrder    Int    @default(0)
+
+  collection Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  prompt     Prompt     @relation(fields: [promptId], references: [id], onDelete: Cascade)
+
+  @@id([collectionId, promptId])
+  @@map("collections_on_prompts")
+}
