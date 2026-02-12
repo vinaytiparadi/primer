@@ -22,7 +22,7 @@ model User {
   sessions    Session[]
   prompts     Prompt[]
   categories  Category[]
-  collections Collection[]
+
   tags        Tag[]
 
   @@map("users")
@@ -103,7 +103,7 @@ model Prompt {
   category    Category?               @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   versions    PromptVersion[]
   tags        TagsOnPrompts[]
-  collections CollectionsOnPrompts[]
+
 
   @@index([userId, updatedAt(sort: Desc)])
   @@map("prompts")
@@ -152,28 +152,3 @@ model TagsOnPrompts {
   @@map("tags_on_prompts")
 }
 
-model Collection {
-  id          String   @id @default(cuid())
-  name        String
-  description String?
-  userId      String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  user    User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  prompts CollectionsOnPrompts[]
-
-  @@map("collections")
-}
-
-model CollectionsOnPrompts {
-  collectionId String
-  promptId     String
-  sortOrder    Int    @default(0)
-
-  collection Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
-  prompt     Prompt     @relation(fields: [promptId], references: [id], onDelete: Cascade)
-
-  @@id([collectionId, promptId])
-  @@map("collections_on_prompts")
-}

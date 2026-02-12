@@ -18,7 +18,6 @@ export async function GET(
             category: true,
             versions: { orderBy: { createdAt: "desc" } },
             tags: { include: { tag: true } },
-            collections: { include: { collection: true } },
         },
     });
 
