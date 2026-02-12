@@ -12,7 +12,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Primer — AI Prompt Manager",
+  title: "Primer - Prompt Manager",
   description:
     "A centralized hub for managing, versioning, and organizing your AI prompts across Claude, Gemini, ChatGPT, and more.",
 };
