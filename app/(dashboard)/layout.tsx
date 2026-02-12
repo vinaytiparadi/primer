@@ -1,8 +1,7 @@
 import { Suspense } from "react";
 import Sidebar from "@/components/sidebar";
-import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription } from "@/components/ui/sheet";
-import { Button } from "@/components/ui/button";
-import { Menu, Loader2 } from "lucide-react";
+import { MobileNav } from "@/components/mobile-nav";
+import { Loader2 } from "lucide-react";
 
 export default function DashboardLayout({
     children,
@@ -25,27 +24,7 @@ export default function DashboardLayout({
             {/* Mobile Header & Content */}
             <div className="flex flex-col flex-1 md:pl-[260px]">
                 <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6 md:hidden">
-                    <Sheet>
-                        <SheetTrigger asChild>
-                            <Button size="icon" variant="outline" className="md:hidden">
-                                <Menu className="h-5 w-5" />
-                                <span className="sr-only">Toggle Menu</span>
-                            </Button>
-                        </SheetTrigger>
-                        <SheetContent side="left" className="p-0 sm:max-w-xs">
-                            <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
-                            <SheetDescription className="sr-only">
-                                Main navigation sidebar
-                            </SheetDescription>
-                            <Suspense fallback={
-                                <div className="flex h-full w-full items-center justify-center">
-                                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-                                </div>
-                            }>
-                                <Sidebar className="h-full border-r-0" />
-                            </Suspense>
-                        </SheetContent>
-                    </Sheet>
+                    <MobileNav />
                     <div className="flex-1">
                         <span className="font-semibold">Primer</span>
                     </div>
