@@ -1,7 +1,8 @@
+import { Suspense } from "react";
 import Sidebar from "@/components/sidebar";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Menu } from "lucide-react";
+import { Menu, Loader2 } from "lucide-react";
 
 export default function DashboardLayout({
     children,
@@ -12,7 +13,13 @@ export default function DashboardLayout({
         <div className="flex min-h-screen w-full flex-col md:flex-row bg-muted/40">
             {/* Desktop Sidebar */}
             <div className="hidden md:flex h-full w-[260px] flex-col fixed inset-y-0 z-30 border-r bg-background">
-                <Sidebar className="h-full" />
+                <Suspense fallback={
+                    <div className="flex h-full w-full items-center justify-center">
+                        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                    </div>
+                }>
+                    <Sidebar className="h-full" />
+                </Suspense>
             </div>
 
             {/* Mobile Header & Content */}
@@ -30,7 +37,13 @@ export default function DashboardLayout({
                             <SheetDescription className="sr-only">
                                 Main navigation sidebar
                             </SheetDescription>
-                            <Sidebar className="h-full border-r-0" />
+                            <Suspense fallback={
+                                <div className="flex h-full w-full items-center justify-center">
+                                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                                </div>
+                            }>
+                                <Sidebar className="h-full border-r-0" />
+                            </Suspense>
                         </SheetContent>
                     </Sheet>
                     <div className="flex-1">

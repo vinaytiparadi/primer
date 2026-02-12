@@ -3,7 +3,6 @@ import { auth } from "@/lib/auth";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { ChevronLeft, MessageSquare } from "lucide-react";
 
 export const dynamic = "force-dynamic";

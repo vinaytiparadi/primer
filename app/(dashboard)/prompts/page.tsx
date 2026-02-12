@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
 import { toast } from "@/components/ui/use-toast";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -17,7 +17,7 @@ import {
     MoreHorizontal,
     PenLine,
     Trash2,
-    Filter
+    Loader2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -47,7 +47,7 @@ interface Category {
     name: string;
 }
 
-export default function PromptsPage() {
+function PromptsContent() {
     const searchParams = useSearchParams();
     const filter = searchParams.get("filter");
     const isFavoritesView = filter === "favorites";
@@ -63,7 +63,6 @@ export default function PromptsPage() {
         const params = new URLSearchParams();
         if (search) params.append("q", search);
         if (isFavoritesView) params.append("favorite", "true");
-        // We can add category filter here if needed later
 
         const url = search ? `/api/search?${params.toString()}` : `/api/prompts?${params.toString()}`;
 
@@ -105,7 +104,6 @@ export default function PromptsPage() {
             });
 
             if (isFavoritesView && current) {
-                // If we are in favorites view and we unfavorite, remove from list
                 setPrompts((prev) => prev.filter((p) => p.id !== id));
                 setTotal((prev) => prev - 1);
             } else {
@@ -349,5 +347,24 @@ export default function PromptsPage() {
                 </div>
             </div>
         </div>
+    );
+}
+
+export default function PromptsPage() {
+    return (
+        <Suspense fallback={
+            <div className="flex flex-col gap-8">
+                <div className="flex flex-col gap-2">
+                    <Skeleton className="h-10 w-48" />
+                    <Skeleton className="h-4 w-64" />
+                </div>
+                <div className="space-y-4">
+                    <Skeleton className="h-10 w-full" />
+                    <Skeleton className="h-[400px] w-full" />
+                </div>
+            </div>
+        }>
+            <PromptsContent />
+        </Suspense>
     );
 }
