@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import { SessionProvider } from "next-auth/react";
 import CommandPalette from "@/components/command-palette";
 import { ThemeProvider } from "@/components/theme-provider"
+import { Toaster } from "@/components/ui/toaster";
 import "./globals.css";
 
 const inter = Inter({
@@ -33,6 +34,7 @@ export default function RootLayout({
           <SessionProvider>
             {children}
             <CommandPalette />
+            <Toaster />
           </SessionProvider>
         </ThemeProvider>
       </body>

@@ -2,6 +2,9 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { ChevronLeft, MessageSquare } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -31,47 +34,76 @@ export default async function CategoryDetailPage({
     if (!category) return notFound();
 
     return (
-        <div className="animate-fade-in">
-            <div style={{ marginBottom: "var(--space-4)" }}>
-                <Link href="/categories" className="btn btn-ghost btn-sm">
-                    ← Back to Categories
-                </Link>
-            </div>
-
-            <div className="page-header">
-                <div style={{ display: "flex", alignItems: "center", gap: "var(--space-3)" }}>
-                    <div className="category-dot" style={{ width: 12, height: 12, background: category.color || "var(--accent-500)" }} />
-                    <div>
-                        <h1 className="page-title">{category.name}</h1>
-                        {category.description && <p className="page-subtitle">{category.description}</p>}
-                    </div>
+        <div className="space-y-6">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-center gap-4">
+                    <Button variant="ghost" size="icon" asChild>
+                        <Link href="/categories">
+                            <ChevronLeft className="h-4 w-4" />
+                        </Link>
+                    </Button>
+                    <h1
+                        className="text-3xl font-bold tracking-tight px-3 py-1 rounded-lg border"
+                        style={{
+                            backgroundColor: (category.color || "#10b981") + "20",
+                            color: category.color || "#10b981",
+                            borderColor: (category.color || "#10b981") + "40"
+                        }}
+                    >
+                        {category.name}
+                    </h1>
                 </div>
             </div>
+            {category.description && (
+                <p className="text-muted-foreground ml-12 -mt-4">{category.description}</p>
+            )}
 
             {category.prompts.length === 0 ? (
-                <div className="empty-state">
-                    <h3 className="empty-state-title">No prompts in this category</h3>
-                    <p className="empty-state-description">Assign prompts to this category from the prompt editor.</p>
-                    <Link href="/prompts/new" className="btn btn-primary">Create a prompt</Link>
+                <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center animate-in fade-in-50">
+                    <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+                        <MessageSquare className="h-6 w-6 text-muted-foreground" />
+                    </div>
+                    <h3 className="mt-4 text-lg font-semibold">No prompts in this category</h3>
+                    <p className="mb-4 mt-2 text-sm text-muted-foreground max-w-sm mx-auto">
+                        Assign prompts to this category from the prompt editor or creates a new one.
+                    </p>
+                    <Button asChild>
+                        <Link href="/prompts/new">Create Prompt</Link>
+                    </Button>
                 </div>
             ) : (
-                <div className="prompt-list">
-                    {category.prompts.map((prompt) => (
-                        <Link key={prompt.id} href={`/prompts/${prompt.id}`} className="prompt-item">
-                            <div className="prompt-item-content">
-                                <div className="prompt-item-title">{prompt.title}</div>
-                                {prompt.description && <div className="prompt-item-desc">{prompt.description}</div>}
-                                <div className="prompt-item-meta">
-                                    {prompt.versions[0] && (
-                                        <span className="badge badge-model">{prompt.versions[0].modelTarget}</span>
-                                    )}
-                                    {prompt.tags.map((t) => (
-                                        <span key={t.tag.id} className="badge badge-default">{t.tag.name}</span>
-                                    ))}
-                                </div>
-                            </div>
-                        </Link>
-                    ))}
+                <div className="rounded-md border bg-background">
+                    <div className="relative w-full overflow-auto">
+                        <table className="w-full caption-bottom text-sm text-left">
+                            <thead className="[&_tr]:border-b">
+                                <tr className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
+                                    <th className="p-4 text-left align-middle font-medium text-muted-foreground">Name</th>
+
+                                    <th className="p-4 text-left align-middle font-medium text-muted-foreground">Updated</th>
+                                </tr>
+                            </thead>
+                            <tbody className="[&_tr:last-child]:border-0">
+                                {category.prompts.map((prompt) => (
+                                    <tr key={prompt.id} className="border-b transition-colors hover:bg-muted/50">
+                                        <td className="p-4 text-left align-middle">
+                                            <Link href={`/prompts/${prompt.id}`} className="block group">
+                                                <span className="font-medium group-hover:underline">{prompt.title}</span>
+                                                {prompt.description && (
+                                                    <span className="block text-xs text-muted-foreground line-clamp-1 max-w-[300px] mt-0.5">
+                                                        {prompt.description}
+                                                    </span>
+                                                )}
+                                            </Link>
+                                        </td>
+
+                                        <td className="p-4 text-left align-middle text-muted-foreground text-xs">
+                                            {new Date(prompt.updatedAt).toLocaleDateString()}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             )}
         </div>

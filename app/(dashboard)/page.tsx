@@ -10,9 +10,8 @@ import {
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
 
 export default async function DashboardPage() {
     const session = await auth();
@@ -55,42 +54,27 @@ export default async function DashboardPage() {
             </div>
 
             <div className="grid gap-4 md:grid-cols-3">
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Prompts</CardTitle>
-                        <MessageSquare className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{promptCount}</div>
-                        <p className="text-xs text-muted-foreground">
-                            Saved in your library
-                        </p>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Categories</CardTitle>
-                        <Folder className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{categoryCount}</div>
-                        <p className="text-xs text-muted-foreground">
-                            Active categories
-                        </p>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Favorites</CardTitle>
-                        <Star className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{favoriteCount}</div>
-                        <p className="text-xs text-muted-foreground">
-                            Starred prompts
-                        </p>
-                    </CardContent>
-                </Card>
+                <div className="rounded-lg border bg-card p-6 shadow-sm">
+                    <h3 className="text-sm font-medium text-muted-foreground">Total Prompts</h3>
+                    <div className="mt-2 text-3xl font-bold">{promptCount}</div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                        Saved in your library
+                    </p>
+                </div>
+                <div className="rounded-lg border bg-card p-6 shadow-sm">
+                    <h3 className="text-sm font-medium text-muted-foreground">Categories</h3>
+                    <div className="mt-2 text-3xl font-bold">{categoryCount}</div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                        Active categories
+                    </p>
+                </div>
+                <div className="rounded-lg border bg-card p-6 shadow-sm">
+                    <h3 className="text-sm font-medium text-muted-foreground">Favorites</h3>
+                    <div className="mt-2 text-3xl font-bold">{favoriteCount}</div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                        Starred prompts
+                    </p>
+                </div>
             </div>
 
             <div className="space-y-4">
@@ -104,7 +88,7 @@ export default async function DashboardPage() {
                 </div>
 
                 {recentPrompts.length === 0 ? (
-                    <Card className="flex flex-col items-center justify-center p-8 text-center border-dashed">
+                    <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center animate-in fade-in-50">
                         <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-muted">
                             <MessageSquare className="h-6 w-6 text-muted-foreground" />
                         </div>
@@ -115,43 +99,50 @@ export default async function DashboardPage() {
                         <Button asChild>
                             <Link href="/prompts/new">Create Prompt</Link>
                         </Button>
-                    </Card>
+                    </div>
                 ) : (
-                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                        {recentPrompts.map((prompt) => (
-                            <Link
-                                key={prompt.id}
-                                href={`/prompts/${prompt.id}`}
-                                className="block group"
-                            >
-                                <Card className="h-full transition-all hover:border-primary/50 hover:shadow-sm">
-                                    <CardHeader className="pb-3">
-                                        <div className="flex items-start justify-between">
-                                            <CardTitle className="text-base font-semibold leading-none group-hover:text-primary transition-colors line-clamp-1">
-                                                {prompt.title}
-                                            </CardTitle>
-                                        </div>
-                                        <CardDescription className="line-clamp-2 min-h-[2.5em]">
-                                            {prompt.description || "No description provided."}
-                                        </CardDescription>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <div className="flex flex-wrap gap-2">
-                                            {prompt.category && (
-                                                <Badge variant="secondary" className="bg-primary/5 text-primary hover:bg-primary/10">
-                                                    {prompt.category.name}
-                                                </Badge>
-                                            )}
-                                            {prompt.versions[0] && (
-                                                <Badge variant="outline" className="text-xs font-normal">
-                                                    {prompt.versions[0].modelTarget}
-                                                </Badge>
-                                            )}
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            </Link>
-                        ))}
+                    <div className="rounded-md border bg-background">
+                        <div className="relative w-full overflow-auto">
+                            <table className="w-full caption-bottom text-sm text-left">
+                                <thead className="[&_tr]:border-b">
+                                    <tr className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
+                                        <th className="p-4 text-left align-middle font-medium text-muted-foreground">Name</th>
+                                        <th className="p-4 text-left align-middle font-medium text-muted-foreground hidden sm:table-cell">Category</th>
+
+                                        <th className="p-4 text-left align-middle font-medium text-muted-foreground">Updated</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="[&_tr:last-child]:border-0">
+                                    {recentPrompts.map((prompt) => (
+                                        <tr key={prompt.id} className="border-b transition-colors hover:bg-muted/50">
+                                            <td className="p-4 text-left align-middle">
+                                                <Link href={`/prompts/${prompt.id}`} className="block group">
+                                                    <span className="font-medium group-hover:underline">{prompt.title}</span>
+                                                    {prompt.description && (
+                                                        <span className="block text-xs text-muted-foreground line-clamp-1 max-w-[300px] mt-0.5">
+                                                            {prompt.description}
+                                                        </span>
+                                                    )}
+                                                </Link>
+                                            </td>
+                                            <td className="p-4 text-left align-middle hidden sm:table-cell text-muted-foreground text-xs">
+                                                {prompt.category ? (
+                                                    <span>
+                                                        {prompt.category.name}
+                                                    </span>
+                                                ) : (
+                                                    <span>-</span>
+                                                )}
+                                            </td>
+
+                                            <td className="p-4 text-left align-middle text-muted-foreground text-xs">
+                                                {new Date(prompt.updatedAt).toLocaleDateString()}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 )}
             </div>

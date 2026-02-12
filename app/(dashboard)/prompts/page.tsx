@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { toast } from "@/components/ui/use-toast";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
     Plus,
@@ -13,10 +14,21 @@ import {
     Star,
     Copy,
     FileText,
-    Layers,
-    Tag
+    MoreHorizontal,
+    PenLine,
+    Trash2,
+    Filter
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+
 
 interface Prompt {
     id: string;
@@ -26,63 +38,121 @@ interface Prompt {
     usageCount: number;
     updatedAt: string;
     category: { id: string; name: string; color: string | null } | null;
-    versions: { id: string; modelTarget: string; versionLabel: string }[];
+    versions: { id: string; modelTarget: string; versionLabel: string; isActive: boolean }[];
     tags: { tag: { id: string; name: string } }[];
 }
 
+interface Category {
+    id: string;
+    name: string;
+}
+
 export default function PromptsPage() {
+    const searchParams = useSearchParams();
+    const filter = searchParams.get("filter");
+    const isFavoritesView = filter === "favorites";
+
     const [prompts, setPrompts] = useState<Prompt[]>([]);
+    const [categories, setCategories] = useState<Category[]>([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState("");
     const [total, setTotal] = useState(0);
 
-    useEffect(() => {
-        fetchPrompts();
+    const fetchPrompts = useCallback(async () => {
+        setLoading(true);
+        const params = new URLSearchParams();
+        if (search) params.append("q", search);
+        if (isFavoritesView) params.append("favorite", "true");
+        // We can add category filter here if needed later
+
+        const url = search ? `/api/search?${params.toString()}` : `/api/prompts?${params.toString()}`;
+
+        try {
+            const res = await fetch(url);
+            const data = await res.json();
+            setPrompts(data.prompts || data.results || []);
+            setTotal(data.total || (data.results ? data.results.length : 0));
+        } catch (error) {
+            console.error("Failed to fetch prompts", error);
+        } finally {
+            setLoading(false);
+        }
+    }, [search, isFavoritesView]);
+
+    const fetchCategories = useCallback(async () => {
+        try {
+            const res = await fetch("/api/categories");
+            const data = await res.json();
+            setCategories(data);
+        } catch (error) {
+            console.error("Failed to fetch categories", error);
+        }
     }, []);
 
-    async function fetchPrompts() {
-        setLoading(true);
-        const res = await fetch("/api/prompts");
-        const data = await res.json();
-        setPrompts(data.prompts || []);
-        setTotal(data.total || 0);
-        setLoading(false);
-    }
-
-    async function searchPrompts(q: string) {
-        if (!q.trim()) {
-            fetchPrompts();
-            return;
-        }
-        setLoading(true);
-        const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
-        const data = await res.json();
-        setPrompts(data.results || []);
-        setTotal(data.results?.length || 0);
-        setLoading(false);
-    }
+    useEffect(() => {
+        fetchPrompts();
+        fetchCategories();
+    }, [fetchPrompts, fetchCategories]);
 
     async function toggleFavorite(e: React.MouseEvent, id: string, current: boolean) {
         e.preventDefault();
         e.stopPropagation();
-        await fetch(`/api/prompts/${id}`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ isFavorite: !current }),
-        });
-        setPrompts((prev) =>
-            prev.map((p) => (p.id === id ? { ...p, isFavorite: !current } : p))
-        );
+        try {
+            await fetch(`/api/prompts/${id}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ isFavorite: !current }),
+            });
+
+            if (isFavoritesView && current) {
+                // If we are in favorites view and we unfavorite, remove from list
+                setPrompts((prev) => prev.filter((p) => p.id !== id));
+                setTotal((prev) => prev - 1);
+            } else {
+                setPrompts((prev) =>
+                    prev.map((p) => (p.id === id ? { ...p, isFavorite: !current } : p))
+                );
+            }
+        } catch (error) {
+            console.error("Failed to toggle favorite", error);
+        }
     }
 
-    function copyContent(e: React.MouseEvent, prompt: Prompt) {
+    function copyTitle(e: React.MouseEvent, prompt: Prompt) {
         e.preventDefault();
         e.stopPropagation();
-        const content = prompt.versions[0]?.modelTarget
-            ? prompt.versions.find((v) => v.modelTarget)
-            : prompt.versions[0];
-        if (content) {
-            navigator.clipboard.writeText(prompt.title);
+        navigator.clipboard.writeText(prompt.title);
+        toast({
+            title: "Copied!",
+            description: "Prompt title copied to clipboard.",
+        });
+    }
+
+    async function updateCategory(promptId: string, categoryId: string | null) {
+        try {
+            const res = await fetch(`/api/prompts/${promptId}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ categoryId }),
+            });
+            const updated = await res.json();
+            setPrompts((prev) => prev.map(p => p.id === promptId ? { ...p, category: updated.category } : p));
+        } catch (error) {
+            console.error("Failed to update category", error);
+        }
+    }
+
+    async function deletePrompt(e: React.MouseEvent, id: string) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!confirm("Are you sure you want to delete this prompt?")) return;
+
+        try {
+            await fetch(`/api/prompts/${id}`, { method: "DELETE" });
+            setPrompts((prev) => prev.filter((p) => p.id !== id));
+            setTotal((prev) => prev - 1);
+        } catch (error) {
+            console.error("Failed to delete prompt", error);
         }
     }
 
@@ -90,15 +160,21 @@ export default function PromptsPage() {
         <div className="space-y-6">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Prompts</h1>
-                    <p className="text-muted-foreground">{total} prompts in your library</p>
+                    <h1 className="text-3xl font-bold tracking-tight">
+                        {isFavoritesView ? "Favorites" : "Prompts"}
+                    </h1>
+                    <p className="text-muted-foreground">
+                        {total} {total === 1 ? "prompt" : "prompts"} {isFavoritesView ? "in favorites" : "in your library"}
+                    </p>
                 </div>
-                <Button asChild>
-                    <Link href="/prompts/new">
-                        <Plus className="mr-2 h-4 w-4" />
-                        New Prompt
-                    </Link>
-                </Button>
+                {!isFavoritesView && (
+                    <Button asChild>
+                        <Link href="/prompts/new">
+                            <Plus className="mr-2 h-4 w-4" />
+                            New Prompt
+                        </Link>
+                    </Button>
+                )}
             </div>
 
             <div className="flex items-center space-x-2">
@@ -109,101 +185,169 @@ export default function PromptsPage() {
                         placeholder="Search prompts..."
                         className="pl-8"
                         value={search}
-                        onChange={(e) => {
-                            setSearch(e.target.value);
-                            searchPrompts(e.target.value);
-                        }}
+                        onChange={(e) => setSearch(e.target.value)}
                     />
                 </div>
             </div>
 
-            {loading ? (
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    {[1, 2, 3, 4, 5, 6].map((i) => (
-                        <Card key={i} className="overflow-hidden">
-                            <CardContent className="p-6">
-                                <Skeleton className="h-6 w-3/4 mb-4" />
-                                <Skeleton className="h-4 w-full mb-2" />
-                                <Skeleton className="h-4 w-2/3" />
-                            </CardContent>
-                        </Card>
-                    ))}
-                </div>
-            ) : prompts.length === 0 ? (
-                <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center animate-in fade-in-50">
-                    <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-muted">
-                        <FileText className="h-6 w-6 text-muted-foreground" />
-                    </div>
-                    <h3 className="mt-4 text-lg font-semibold">
-                        {search ? "No results found" : "No prompts yet"}
-                    </h3>
-                    <p className="mb-4 mt-2 text-sm text-muted-foreground max-w-sm mx-auto">
-                        {search
-                            ? `No prompts match "${search}". Try different keywords.`
-                            : "Create your first prompt to get started collecting and organizing your AI interactions."}
-                    </p>
-                    {!search && (
-                        <Button asChild>
-                            <Link href="/prompts/new">Create Prompt</Link>
-                        </Button>
-                    )}
-                </div>
-            ) : (
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                    {prompts.map((prompt) => (
-                        <Link key={prompt.id} href={`/prompts/${prompt.id}`} className="block group transition-all hover:scale-[1.01] focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded-xl">
-                            <Card className="h-full overflow-hidden border-muted-foreground/20 hover:border-primary/50 transition-colors">
-                                <CardContent className="p-5 flex flex-col h-full">
-                                    <div className="flex items-start justify-between mb-2">
-                                        <h3 className="font-semibold leading-none tracking-tight line-clamp-1 group-hover:text-primary transition-colors">
-                                            {prompt.title}
-                                        </h3>
-                                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            <div className="rounded-md border bg-background">
+                <div className="relative w-full overflow-auto">
+                    <table className="w-full caption-bottom text-sm text-left">
+                        <thead className="[&_tr]:border-b">
+                            <tr className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
+                                <th className="p-4 text-left align-middle font-medium text-muted-foreground w-[40px]">
+                                    <span className="sr-only">Favorite</span>
+                                </th>
+                                <th className="p-4 text-left align-middle font-medium text-muted-foreground">Name</th>
+                                <th className="p-4 text-left align-middle font-medium text-muted-foreground hidden md:table-cell">Category</th>
+                                <th className="p-4 text-left align-middle font-medium text-muted-foreground hidden sm:table-cell">Versions</th>
+                                <th className="p-4 text-left align-middle font-medium text-muted-foreground hidden lg:table-cell">Updated</th>
+                                <th className="p-4 text-left align-middle font-medium text-muted-foreground text-right w-[100px]">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody className="[&_tr:last-child]:border-0">
+                            {loading ? (
+                                Array.from({ length: 5 }).map((_, i) => (
+                                    <tr key={i} className="border-b transition-colors hover:bg-muted/50">
+                                        <td className="p-4 text-left"><Skeleton className="h-4 w-4" /></td>
+                                        <td className="p-4 text-left">
+                                            <Skeleton className="h-5 w-3/4 mb-1" />
+                                            <Skeleton className="h-3 w-1/2" />
+                                        </td>
+                                        <td className="p-4 text-left hidden md:table-cell"><Skeleton className="h-5 w-20" /></td>
+                                        <td className="p-4 text-left hidden sm:table-cell"><Skeleton className="h-5 w-12" /></td>
+                                        <td className="p-4 text-left hidden lg:table-cell"><Skeleton className="h-4 w-24" /></td>
+                                        <td className="p-4 text-right"><Skeleton className="h-8 w-8 ml-auto" /></td>
+                                    </tr>
+                                ))
+                            ) : prompts.length === 0 ? (
+                                <tr>
+                                    <td colSpan={6} className="h-24 text-center">
+                                        <div className="flex flex-col items-center justify-center p-8 text-center text-muted-foreground">
+                                            <FileText className="h-8 w-8 mb-2 opacity-50" />
+                                            <p>{search ? "No matches found" : isFavoritesView ? "No favorites yet" : "No prompt found"}</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ) : (
+                                prompts.map((prompt) => (
+                                    <tr key={prompt.id} className="border-b transition-colors hover:bg-muted/50 group">
+                                        <td className="p-4 text-left align-middle">
                                             <Button
                                                 variant="ghost"
                                                 size="icon"
-                                                className="h-8 w-8"
+                                                className="h-6 w-6"
                                                 onClick={(e) => toggleFavorite(e, prompt.id, prompt.isFavorite)}
-                                                title={prompt.isFavorite ? "Unfavorite" : "Favorite"}
                                             >
                                                 <Star
-                                                    className={cn("h-4 w-4", prompt.isFavorite ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground")}
+                                                    className={cn(
+                                                        "h-4 w-4",
+                                                        prompt.isFavorite ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground hover:text-foreground"
+                                                    )}
                                                 />
                                             </Button>
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                className="h-8 w-8"
-                                                onClick={(e) => copyContent(e, prompt)}
-                                                title="Copy content"
-                                            >
-                                                <Copy className="h-4 w-4 text-muted-foreground" />
-                                            </Button>
-                                        </div>
-                                    </div>
-
-                                    <p className="text-sm text-muted-foreground line-clamp-3 mb-4 flex-1">
-                                        {prompt.description || "No description provided."}
-                                    </p>
-
-                                    <div className="flex flex-wrap gap-2 mt-auto">
-                                        {prompt.category && (
-                                            <Badge variant="secondary" className="bg-primary/10 text-primary hover:bg-primary/20">
-                                                {prompt.category.name}
-                                            </Badge>
-                                        )}
-                                        {prompt.versions.slice(0, 2).map((v) => (
-                                            <Badge key={v.id} variant="outline" className="text-xs font-normal">
-                                                {v.modelTarget}
-                                            </Badge>
-                                        ))}
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        </Link>
-                    ))}
+                                        </td>
+                                        <td className="p-4 text-left align-middle">
+                                            <Link href={`/prompts/${prompt.id}`} className="block group/link">
+                                                <div className="font-medium text-foreground group-hover/link:underline cursor-pointer">
+                                                    {prompt.title}
+                                                </div>
+                                                {prompt.description && (
+                                                    <div className="text-xs text-muted-foreground line-clamp-1 max-w-[300px]">
+                                                        {prompt.description}
+                                                    </div>
+                                                )}
+                                            </Link>
+                                        </td>
+                                        <td className="p-4 text-left align-middle hidden md:table-cell">
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <span
+                                                        className={cn(
+                                                            "text-xs text-muted-foreground cursor-pointer hover:text-foreground select-none transition-colors",
+                                                            !prompt.category ? "opacity-50 italic" : ""
+                                                        )}
+                                                    >
+                                                        {prompt.category?.name || "Add Category"}
+                                                    </span>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="start">
+                                                    <DropdownMenuLabel>Select Category</DropdownMenuLabel>
+                                                    <DropdownMenuSeparator />
+                                                    {categories.map((c) => (
+                                                        <DropdownMenuItem
+                                                            key={c.id}
+                                                            onClick={() => updateCategory(prompt.id, c.id)}
+                                                            className="flex items-center justify-between"
+                                                        >
+                                                            {c.name}
+                                                            {prompt.category?.id === c.id && <span className="text-primary text-xs ml-2">✓</span>}
+                                                        </DropdownMenuItem>
+                                                    ))}
+                                                    <DropdownMenuSeparator />
+                                                    <DropdownMenuItem onClick={() => updateCategory(prompt.id, null)}>
+                                                        None
+                                                    </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
+                                        </td>
+                                        <td className="p-4 text-left align-middle hidden sm:table-cell">
+                                            <div className="flex items-center gap-1 flex-wrap">
+                                                <Badge variant="secondary" className="text-xs h-5 px-1.5">
+                                                    {prompt.versions.length}
+                                                </Badge>
+                                                {prompt.versions.slice(0, 2).map(v => (
+                                                    <Badge key={v.id} variant="outline" className="text-[10px] h-5 px-1.5 text-muted-foreground font-normal">
+                                                        {v.modelTarget}
+                                                    </Badge>
+                                                ))}
+                                                {prompt.versions.length > 2 && (
+                                                    <span className="text-[10px] text-muted-foreground">+{prompt.versions.length - 2}</span>
+                                                )}
+                                            </div>
+                                        </td>
+                                        <td className="p-4 text-left align-middle hidden lg:table-cell text-muted-foreground text-xs whitespace-nowrap">
+                                            {new Date(prompt.updatedAt).toLocaleDateString()}
+                                        </td>
+                                        <td className="p-4 align-middle text-right">
+                                            <div className="flex items-center justify-end">
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                                                            <MoreHorizontal className="h-4 w-4" />
+                                                            <span className="sr-only">Actions</span>
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent align="end">
+                                                        <DropdownMenuItem asChild>
+                                                            <Link href={`/prompts/${prompt.id}`}>
+                                                                <PenLine className="mr-2 h-4 w-4" />
+                                                                Edit
+                                                            </Link>
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem onClick={(e) => copyTitle(e, prompt)}>
+                                                            <Copy className="mr-2 h-4 w-4" />
+                                                            Copy Title
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuSeparator />
+                                                        <DropdownMenuItem
+                                                            className="text-destructive focus:text-destructive"
+                                                            onClick={(e) => deletePrompt(e, prompt.id)}
+                                                        >
+                                                            <Trash2 className="mr-2 h-4 w-4" />
+                                                            Delete
+                                                        </DropdownMenuItem>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
+                        </tbody>
+                    </table>
                 </div>
-            )}
+            </div>
         </div>
     );
 }

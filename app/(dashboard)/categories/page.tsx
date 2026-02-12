@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Plus, Trash2, FolderOpen } from "lucide-react";
+import { Plus, Trash2, FolderOpen, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -17,6 +17,22 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
+
+const PREDEFINED_COLORS = [
+    "#ef4444", // red-500
+    "#f97316", // orange-500
+    "#f59e0b", // amber-500
+    "#84cc16", // lime-500
+    "#10b981", // emerald-500
+    "#06b6d4", // cyan-500
+    "#3b82f6", // blue-500
+    "#6366f1", // indigo-500
+    "#8b5cf6", // violet-500
+    "#d946ef", // fuchsia-500
+    "#f43f5e", // rose-500
+    "#64748b", // slate-500
+];
 
 interface Category {
     id: string;
@@ -109,19 +125,25 @@ export default function CategoriesPage() {
                                     autoFocus
                                 />
                             </div>
-                            <div className="grid grid-cols-4 items-center gap-4">
-                                <Label htmlFor="color" className="text-right">
+                            <div className="grid grid-cols-4 items-start gap-4">
+                                <Label className="text-right pt-2">
                                     Color
                                 </Label>
-                                <div className="flex items-center gap-2 col-span-3">
-                                    <Input
-                                        id="color"
-                                        type="color"
-                                        value={color}
-                                        onChange={(e) => setColor(e.target.value)}
-                                        className="w-12 h-10 p-1 cursor-pointer"
-                                    />
-                                    <span className="text-sm text-muted-foreground">{color}</span>
+                                <div className="col-span-3 flex flex-wrap gap-2">
+                                    {PREDEFINED_COLORS.map((c) => (
+                                        <button
+                                            key={c}
+                                            type="button"
+                                            onClick={() => setColor(c)}
+                                            className={cn(
+                                                "h-8 w-8 rounded-full flex items-center justify-center transition-all hover:scale-110 focus:outline-none ring-2 ring-offset-2 ring-offset-background",
+                                                color === c ? "ring-ring scale-110" : "ring-transparent"
+                                            )}
+                                            style={{ backgroundColor: c }}
+                                        >
+                                            {color === c && <Check className="h-4 w-4 text-white" />}
+                                        </button>
+                                    ))}
                                 </div>
                             </div>
                             <div className="grid grid-cols-4 items-center gap-4">
@@ -147,18 +169,29 @@ export default function CategoriesPage() {
             </div>
 
             {loading ? (
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    {[1, 2, 3].map((i) => (
-                        <Card key={i}>
-                            <CardHeader className="space-y-2">
-                                <Skeleton className="h-5 w-1/2" />
-                                <Skeleton className="h-4 w-full" />
-                            </CardHeader>
-                            <CardContent>
-                                <Skeleton className="h-4 w-1/4" />
-                            </CardContent>
-                        </Card>
-                    ))}
+                <div className="rounded-md border bg-background">
+                    <div className="relative w-full overflow-auto">
+                        <table className="w-full caption-bottom text-sm text-left">
+                            <thead className="[&_tr]:border-b">
+                                <tr className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
+                                    <th className="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Name</th>
+                                    <th className="h-10 px-4 text-left align-middle font-medium text-muted-foreground hidden md:table-cell">Description</th>
+                                    <th className="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Prompts</th>
+                                    <th className="h-10 px-4 text-right align-middle font-medium text-muted-foreground">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody className="[&_tr:last-child]:border-0">
+                                {[1, 2, 3].map((i) => (
+                                    <tr key={i} className="border-b transition-colors hover:bg-muted/50">
+                                        <td className="p-4"><Skeleton className="h-5 w-32" /></td>
+                                        <td className="p-4 hidden md:table-cell"><Skeleton className="h-5 w-full" /></td>
+                                        <td className="p-4"><Skeleton className="h-5 w-8" /></td>
+                                        <td className="p-4 text-right"><Skeleton className="h-8 w-8 ml-auto" /></td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             ) : categories.length === 0 ? (
                 <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center animate-in fade-in-50">
@@ -174,42 +207,56 @@ export default function CategoriesPage() {
                     </Button>
                 </div>
             ) : (
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                    {categories.map((cat) => (
-                        <Card key={cat.id} className="group relative overflow-hidden transition-all hover:border-primary/50">
-                            <CardHeader className="pb-2">
-                                <div className="flex items-start justify-between">
-                                    <div className="flex items-center gap-2">
-                                        <div
-                                            className="h-3 w-3 rounded-full flex-shrink-0"
-                                            style={{ backgroundColor: cat.color || "#10b981" }}
-                                        />
-                                        <Link href={`/categories/${cat.slug}`} className="font-semibold hover:underline decoration-primary underline-offset-4 decoration-2">
-                                            {cat.name}
-                                        </Link>
-                                    </div>
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-                                        onClick={() => deleteCategory(cat.id)}
-                                    >
-                                        <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive" />
-                                    </Button>
-                                </div>
-                            </CardHeader>
-                            <CardContent>
-                                {cat.description && (
-                                    <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
-                                        {cat.description}
-                                    </p>
-                                )}
-                                <p className="text-xs font-medium text-muted-foreground mt-2">
-                                    {cat._count.prompts} {cat._count.prompts === 1 ? "prompt" : "prompts"}
-                                </p>
-                            </CardContent>
-                        </Card>
-                    ))}
+                <div className="rounded-md border bg-background">
+                    <div className="relative w-full overflow-auto">
+                        <table className="w-full caption-bottom text-sm text-left">
+                            <thead className="[&_tr]:border-b">
+                                <tr className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
+                                    <th className="p-4 text-left align-middle font-medium text-muted-foreground">Name</th>
+                                    <th className="p-4 text-left align-middle font-medium text-muted-foreground hidden md:table-cell">Description</th>
+                                    <th className="p-4 text-left align-middle font-medium text-muted-foreground">Prompts</th>
+                                    <th className="p-4 text-right align-middle font-medium text-muted-foreground w-[100px]">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody className="[&_tr:last-child]:border-0">
+                                {categories.map((cat) => (
+                                    <tr key={cat.id} className="border-b transition-colors hover:bg-muted/50 group">
+                                        <td className="p-4 text-left align-middle">
+                                            <Link
+                                                href={`/categories/${cat.slug}`}
+                                                className="inline-flex items-center px-2.5 py-1 rounded-md text-sm font-medium transition-colors hover:bg-opacity-80"
+                                                style={{
+                                                    backgroundColor: (cat.color || "#10b981") + "20",
+                                                    color: cat.color || "#10b981",
+                                                    border: `1px solid ${(cat.color || "#10b981") + "40"}`
+                                                }}
+                                            >
+                                                {cat.name}
+                                            </Link>
+                                        </td>
+                                        <td className="p-4 text-left align-middle hidden md:table-cell text-muted-foreground">
+                                            {cat.description || "-"}
+                                        </td>
+                                        <td className="p-4 text-left align-middle">
+                                            <span className="text-muted-foreground text-sm">
+                                                {cat._count.prompts}
+                                            </span>
+                                        </td>
+                                        <td className="p-4 text-right align-middle">
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                                                onClick={() => deleteCategory(cat.id)}
+                                            >
+                                                <Trash2 className="h-4 w-4" />
+                                            </Button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             )}
         </div>

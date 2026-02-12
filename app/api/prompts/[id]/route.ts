@@ -16,7 +16,7 @@ export async function GET(
         where: { id, userId: session.user.id },
         include: {
             category: true,
-            versions: { orderBy: { createdAt: "desc" } },
+            versions: { orderBy: { createdAt: "asc" } },
             tags: { include: { tag: true } },
         },
     });
@@ -62,7 +62,7 @@ export async function PATCH(
         },
         include: {
             category: true,
-            versions: { orderBy: { createdAt: "desc" } },
+            versions: { orderBy: { createdAt: "asc" } },
             tags: { include: { tag: true } },
         },
     });

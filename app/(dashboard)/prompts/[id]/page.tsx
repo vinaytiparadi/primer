@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
     ChevronLeft,
+    ChevronDown,
     Star,
     Copy,
     MoreVertical,
@@ -15,7 +16,9 @@ import {
     Save,
     Check,
     X,
-    FileText
+    FileText,
+    Settings2,
+    Code2
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -28,8 +31,9 @@ import {
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuTrigger,
+    DropdownMenuSeparator,
+    DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
@@ -46,6 +50,12 @@ interface Version {
     createdAt: string;
 }
 
+interface Category {
+    id: string;
+    name: string;
+    color: string | null;
+}
+
 interface PromptData {
     id: string;
     title: string;
@@ -53,7 +63,7 @@ interface PromptData {
     isFavorite: boolean;
     isPinned: boolean;
     usageCount: number;
-    category: { id: string; name: string; color: string | null } | null;
+    category: Category | null;
     versions: Version[];
     tags: { tag: { id: string; name: string } }[];
 }
@@ -62,6 +72,7 @@ export default function PromptDetailPage() {
     const { id } = useParams();
     const router = useRouter();
     const [prompt, setPrompt] = useState<PromptData | null>(null);
+    const [categories, setCategories] = useState<Category[]>([]);
     const [loading, setLoading] = useState(true);
     const [activeVersionIndex, setActiveVersionIndex] = useState(0);
     const [editing, setEditing] = useState(false);
@@ -78,12 +89,26 @@ export default function PromptDetailPage() {
         }
         const data = await res.json();
         setPrompt(data);
+        if (data.versions && data.versions.length > 0) {
+            setActiveVersionIndex(data.versions.length - 1);
+        }
         setLoading(false);
     }, [id, router]);
 
+    const fetchCategories = useCallback(async () => {
+        try {
+            const res = await fetch("/api/categories");
+            const data = await res.json();
+            setCategories(data);
+        } catch (error) {
+            console.error("Failed to fetch categories", error);
+        }
+    }, []);
+
     useEffect(() => {
         fetchPrompt();
-    }, [fetchPrompt]);
+        fetchCategories();
+    }, [fetchPrompt, fetchCategories]);
 
     function startEdit(version: Version) {
         setEditContent(version.content);
@@ -126,10 +151,38 @@ export default function PromptDetailPage() {
         setPrompt({ ...prompt, isFavorite: !prompt.isFavorite });
     }
 
+    async function updateCategory(categoryId: string | null) {
+        if (!prompt) return;
+        await fetch(`/api/prompts/${id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ categoryId }),
+        });
+        // Optimistic update or fetch
+        fetchPrompt();
+    }
+
     async function deletePrompt() {
         if (!confirm("Delete this prompt? This cannot be undone.")) return;
         await fetch(`/api/prompts/${id}`, { method: "DELETE" });
         router.push("/prompts");
+    }
+
+    async function deleteVersion(versionId: string) {
+        if (!prompt) return;
+        if (prompt.versions.length <= 1) {
+            alert("Cannot delete the only version of a prompt.");
+            return;
+        }
+        if (!confirm("Delete this version? This cannot be undone.")) return;
+
+        await fetch(`/api/prompts/${id}/versions/${versionId}`, { method: "DELETE" });
+
+        // If we deleted the active version, switch index
+        if (activeVersionIndex >= prompt.versions.length - 1) {
+            setActiveVersionIndex(Math.max(0, prompt.versions.length - 2));
+        }
+        fetchPrompt();
     }
 
     async function duplicatePrompt() {
@@ -172,11 +225,11 @@ export default function PromptDetailPage() {
     const currentVersion = prompt.versions[activeVersionIndex];
 
     return (
-        <div className="max-w-4xl mx-auto space-y-6 pb-20">
+        <div className="max-w-5xl mx-auto space-y-6 pb-20">
             <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                 <div className="space-y-2">
                     <div className="flex items-center gap-2">
-                        <Button variant="ghost" size="icon" asChild className="mb-1 -ml-2">
+                        <Button variant="ghost" size="icon" asChild className="-ml-2">
                             <Link href="/prompts">
                                 <ChevronLeft className="h-4 w-4" />
                             </Link>
@@ -187,19 +240,37 @@ export default function PromptDetailPage() {
                         <p className="text-muted-foreground max-w-2xl">{prompt.description}</p>
                     )}
                     <div className="flex flex-wrap items-center gap-2 pt-2">
-                        {prompt.category && (
-                            <Badge variant="secondary" className="bg-primary/10 text-primary">
-                                {prompt.category.name}
-                            </Badge>
-                        )}
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Badge
+                                    variant="secondary"
+                                    className={cn(
+                                        "bg-primary/10 text-primary hover:bg-primary/20 cursor-pointer",
+                                        !prompt.category ? "bg-muted text-muted-foreground border-dashed border" : ""
+                                    )}
+                                >
+                                    {prompt.category ? prompt.category.name : "Add Category"}
+                                </Badge>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="start">
+                                <DropdownMenuLabel>Change Category</DropdownMenuLabel>
+                                <DropdownMenuSeparator />
+                                {categories.map((c) => (
+                                    <DropdownMenuItem key={c.id} onClick={() => updateCategory(c.id)}>
+                                        {c.name}
+                                        {prompt.category?.id === c.id && <span className="ml-auto text-primary">✓</span>}
+                                    </DropdownMenuItem>
+                                ))}
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onClick={() => updateCategory(null)}>None</DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+
                         {prompt.tags.map((t) => (
                             <Badge key={t.tag.id} variant="outline" className="text-xs font-normal">
                                 {t.tag.name}
                             </Badge>
                         ))}
-                        <Badge variant="outline" className="text-xs font-normal text-muted-foreground">
-                            Used {prompt.usageCount}×
-                        </Badge>
                     </div>
                 </div>
 
@@ -225,11 +296,11 @@ export default function PromptDetailPage() {
                         <DropdownMenuContent align="end">
                             <DropdownMenuItem onClick={duplicatePrompt}>
                                 <CopyPlus className="mr-2 h-4 w-4" />
-                                Duplicate
+                                Duplicate Prompt
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={deletePrompt} className="text-destructive focus:text-destructive">
                                 <Trash2 className="mr-2 h-4 w-4" />
-                                Delete
+                                Delete Prompt
                             </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
@@ -238,124 +309,125 @@ export default function PromptDetailPage() {
 
             <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                    <ScrollAreaWrapper>
-                        <Tabs
-                            value={String(activeVersionIndex)}
-                            onValueChange={(v) => {
-                                setActiveVersionIndex(parseInt(v));
-                                setEditing(false);
-                            }}
-                            className="w-full"
-                        >
-                            <TabsList className="h-auto p-1 bg-background border rounded-lg flex-wrap justify-start">
-                                {prompt.versions.map((v, i) => (
-                                    <TabsTrigger
-                                        key={v.id}
-                                        value={String(i)}
-                                        className="gap-2 data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
-                                    >
-                                        {v.versionLabel}
-                                        <Badge variant="secondary" className="ml-1 text-[10px] h-4 px-1 leading-none pointer-events-none">
-                                            {v.modelTarget}
-                                        </Badge>
-                                    </TabsTrigger>
-                                ))}
-                                <Button variant="ghost" size="sm" onClick={addVersion} className="h-8 px-2 ml-1">
-                                    <Plus className="h-4 w-4" />
+                    <div className="flex items-center gap-2">
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="outline" className="w-[120px] justify-between bg-muted/30">
+                                    <div className="flex items-center gap-2">
+                                        <span className="font-mono text-xs font-semibold">v{activeVersionIndex + 1}</span>
+                                        <span className="text-xs text-muted-foreground">{currentVersion?.modelTarget}</span>
+                                    </div>
+                                    <ChevronDown className="h-4 w-4 opacity-50" />
                                 </Button>
-                            </TabsList>
-                        </Tabs>
-                    </ScrollAreaWrapper>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="start" className="w-[120px]">
+                                {prompt.versions.map((v, i) => (
+                                    <DropdownMenuItem
+                                        key={v.id}
+                                        onClick={() => {
+                                            setActiveVersionIndex(i);
+                                            setEditing(false);
+                                        }}
+                                        className="justify-between"
+                                    >
+                                        <div className="flex items-center gap-2">
+                                            <span className="font-mono text-xs">v{i + 1}</span>
+                                            <span className="text-xs text-muted-foreground">{v.modelTarget}</span>
+                                        </div>
+                                        {i === activeVersionIndex && <Check className="h-3 w-3" />}
+                                    </DropdownMenuItem>
+                                ))}
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                        <Button variant="ghost" size="icon" onClick={addVersion} className="h-9 w-9">
+                            <Plus className="h-4 w-4" />
+                        </Button>
+                    </div>
+
+                    {currentVersion && !editing && (
+                        <div className="flex items-center gap-2 ml-4">
+                            <Button variant="ghost" size="sm" className="text-destructive h-8" onClick={() => deleteVersion(currentVersion.id)} disabled={prompt.versions.length <= 1}>
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Delete Version
+                            </Button>
+                        </div>
+                    )}
                 </div>
 
                 {currentVersion && (
-                    <Card className="border-muted-foreground/20 shadow-sm transition-all hover:border-primary/20">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 border-b bg-muted/40 p-4">
+                    <Card className={cn(
+                        "!p-0 !gap-0 !py-0 border-muted-foreground/20 shadow-sm transition-all overflow-hidden",
+                        editing ? "ring-2 ring-primary/20" : "hover:border-primary/20"
+                    )}>
+                        <div className="flex items-center justify-between border-b bg-muted/30 px-4 py-2">
                             <div className="flex items-center gap-2">
-                                <FileText className="h-4 w-4 text-muted-foreground" />
-                                <span className="text-sm font-medium text-muted-foreground">Prompt Content</span>
+                                <Code2 className="h-4 w-4 text-muted-foreground" />
+                                <span className="text-xs font-medium text-muted-foreground font-mono">
+                                    {currentVersion.versionLabel} • {currentVersion.modelTarget}
+                                </span>
                             </div>
-
-                            {!editing && (
-                                <div className="flex items-center gap-2">
-                                    <Button variant="outline" size="sm" onClick={() => startEdit(currentVersion)}>
-                                        <PenLine className="mr-2 h-3 w-3" />
-                                        Edit
+                            <div className="flex items-center gap-1">
+                                {!editing ? (
+                                    <>
+                                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => startEdit(currentVersion)}>
+                                            <PenLine className="h-4 w-4" />
+                                        </Button>
+                                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={copyToClipboard}>
+                                            {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                                        </Button>
+                                    </>
+                                ) : (
+                                    <Button variant="ghost" size="sm" onClick={() => setEditing(false)} className="h-8">
+                                        Cancel
                                     </Button>
-                                    <Button variant="default" size="sm" onClick={copyToClipboard}>
-                                        {copied ? <Check className="mr-2 h-3 w-3" /> : <Copy className="mr-2 h-3 w-3" />}
-                                        {copied ? "Copied" : "Copy"}
-                                    </Button>
-                                </div>
-                            )}
-                        </CardHeader>
+                                )}
+                            </div>
+                        </div>
 
                         <CardContent className="p-0">
                             {editing ? (
-                                <div className="p-6 space-y-6">
-                                    <div className="space-y-2">
-                                        <Label htmlFor="system-prompt">System Prompt</Label>
+                                <div className="grid grid-cols-1 divide-y">
+                                    <div className="p-4 bg-muted/10">
+                                        <Label htmlFor="system-prompt" className="text-xs text-muted-foreground uppercase tracking-wider mb-2 block">System Prompt</Label>
                                         <Textarea
                                             id="system-prompt"
                                             value={editSystem}
                                             onChange={(e) => setEditSystem(e.target.value)}
-                                            className="min-h-[100px] font-mono text-sm"
+                                            className="min-h-[100px] font-mono text-sm bg-background/50 border-muted-foreground/20 focus-visible:ring-primary/20"
                                             placeholder="Optional system instructions..."
                                         />
                                     </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="user-prompt">User Prompt</Label>
+                                    <div className="p-4">
+                                        <Label htmlFor="user-prompt" className="text-xs text-muted-foreground uppercase tracking-wider mb-2 block">User Prompt</Label>
                                         <Textarea
                                             id="user-prompt"
                                             value={editContent}
                                             onChange={(e) => setEditContent(e.target.value)}
-                                            className="min-h-[300px] font-mono text-sm leading-relaxed"
+                                            className="min-h-[300px] font-mono text-sm bg-background/50 border-muted-foreground/20 focus-visible:ring-primary/20 leading-relaxed"
                                             placeholder="Enter your prompt here..."
                                             autoFocus
                                         />
-                                        <div className="flex justify-between items-center pt-2">
-                                            <div className="text-xs text-muted-foreground">
-                                                {editContent.length} chars · ~{Math.ceil(editContent.length / 4)} tokens
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                <Button variant="ghost" size="sm" onClick={() => setEditing(false)}>
-                                                    Cancel
-                                                </Button>
-                                                <Button size="sm" onClick={saveEdit} disabled={saving}>
-                                                    {saving && <span className="mr-2 h-3 w-3 animate-spin rounded-full border-2 border-background border-t-transparent" />}
-                                                    Save Changes
-                                                </Button>
-                                            </div>
+                                        <div className="mt-4 flex justify-end">
+                                            <Button onClick={saveEdit} disabled={saving}>
+                                                {saving && <span className="mr-2 h-3 w-3 animate-spin rounded-full border-2 border-background border-t-transparent" />}
+                                                Save Changes
+                                            </Button>
                                         </div>
                                     </div>
                                 </div>
                             ) : (
-                                <div className="p-0">
+                                <div className="text-sm font-mono leading-relaxed">
                                     {currentVersion.systemPrompt && (
-                                        <div className="bg-muted/30 p-6 border-b">
-                                            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">System</h3>
-                                            <div className="text-sm font-mono whitespace-pre-wrap text-foreground/80">
-                                                {currentVersion.systemPrompt}
-                                            </div>
+                                        <div className="bg-muted/30 p-4 border-b">
+                                            <span className="text-xs font-semibold text-muted-foreground select-none block mb-1">SYSTEM</span>
+                                            <div className="whitespace-pre-wrap text-foreground/80">{currentVersion.systemPrompt}</div>
                                         </div>
                                     )}
-                                    <div className="p-6 bg-background">
-                                        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">User</h3>
-                                        <div className="text-sm font-mono whitespace-pre-wrap leading-relaxed">
-                                            {currentVersion.content}
-                                        </div>
+                                    <div className="p-6 bg-background whitespace-pre-wrap">
+                                        {currentVersion.content}
                                     </div>
                                 </div>
                             )}
-                        </CardContent>
-                    </Card>
-                )}
-
-                {currentVersion?.notes && (
-                    <Card className="bg-muted/30 border-none shadow-none">
-                        <CardContent className="p-4 text-sm text-muted-foreground">
-                            <span className="font-semibold text-foreground">Notes: </span>
-                            {currentVersion.notes}
                         </CardContent>
                     </Card>
                 )}
@@ -364,6 +436,4 @@ export default function PromptDetailPage() {
     );
 }
 
-function ScrollAreaWrapper({ children }: { children: React.ReactNode }) {
-    return <div className="overflow-x-auto pb-2 -mb-2">{children}</div>;
-}
+

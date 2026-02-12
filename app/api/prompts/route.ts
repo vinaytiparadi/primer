@@ -36,7 +36,7 @@ export async function GET(req: NextRequest) {
             where,
             include: {
                 category: true,
-                versions: { orderBy: { createdAt: "desc" } },
+                versions: { orderBy: { createdAt: "asc" } },
                 tags: { include: { tag: true } },
             },
             orderBy,

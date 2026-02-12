@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -14,7 +14,8 @@ import {
     FolderOpen,
     Settings,
     LogOut,
-    User
+    User,
+    Star
 } from "lucide-react";
 import { ModeToggle } from "@/components/mode-toggle";
 
@@ -30,6 +31,11 @@ const navItems = [
         icon: MessageSquare,
     },
     {
+        label: "Favorites",
+        href: "/prompts?filter=favorites",
+        icon: Star,
+    },
+    {
         label: "Categories",
         href: "/categories",
         icon: FolderOpen,
@@ -40,10 +46,29 @@ interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> { }
 
 export function Sidebar({ className }: SidebarProps) {
     const pathname = usePathname();
+    const searchParams = useSearchParams();
     const { data: session } = useSession();
 
     const isActive = (href: string) => {
         if (href === "/") return pathname === "/";
+
+        // Handle items with query params (like Favorites)
+        if (href.includes("?")) {
+            const [path, query] = href.split("?");
+            if (pathname !== path) return false;
+
+            const params = new URLSearchParams(query);
+            for (const [key, value] of params.entries()) {
+                if (searchParams.get(key) !== value) return false;
+            }
+            return true;
+        }
+
+        // Special case: Don't highlight "Prompts" if we are on favorites
+        if (href === "/prompts" && pathname === "/prompts" && searchParams.get("filter") === "favorites") {
+            return false;
+        }
+
         return pathname.startsWith(href);
     };
 
