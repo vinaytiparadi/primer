@@ -2,6 +2,21 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { ChevronLeft, Loader2 } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface Category {
     id: string;
@@ -15,7 +30,7 @@ export default function NewPromptPage() {
     const [content, setContent] = useState("");
     const [systemPrompt, setSystemPrompt] = useState("");
     const [modelTarget, setModelTarget] = useState("universal");
-    const [categoryId, setCategoryId] = useState("");
+    const [categoryId, setCategoryId] = useState<string | undefined>(undefined);
     const [categories, setCategories] = useState<Category[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
@@ -62,113 +77,124 @@ export default function NewPromptPage() {
     }
 
     return (
-        <div className="animate-fade-in" style={{ maxWidth: 720 }}>
-            <div className="page-header">
+        <div className="max-w-3xl mx-auto space-y-6">
+            <div className="flex items-center gap-4">
+                <Button variant="ghost" size="icon" asChild>
+                    <Link href="/prompts">
+                        <ChevronLeft className="h-4 w-4" />
+                    </Link>
+                </Button>
                 <div>
-                    <h1 className="page-title">New Prompt</h1>
-                    <p className="page-subtitle">Create a new AI prompt</p>
+                    <h1 className="text-2xl font-bold tracking-tight">New Prompt</h1>
+                    <p className="text-muted-foreground">Create a new AI prompt</p>
                 </div>
             </div>
 
-            <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "var(--space-5)" }}>
-                {error && <div className="auth-error">{error}</div>}
+            <form onSubmit={handleSubmit}>
+                <Card>
+                    <CardContent className="p-6 space-y-6">
+                        {error && (
+                            <div className="bg-destructive/15 text-destructive text-sm p-3 rounded-md">
+                                {error}
+                            </div>
+                        )}
 
-                <div className="form-group">
-                    <label htmlFor="title" className="form-label">Title</label>
-                    <input
-                        id="title"
-                        type="text"
-                        value={title}
-                        onChange={(e) => setTitle(e.target.value)}
-                        className="form-input"
-                        placeholder="e.g. Code Review Prompt"
-                        required
-                        autoFocus
-                    />
-                </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="title">Title</Label>
+                            <Input
+                                id="title"
+                                value={title}
+                                onChange={(e) => setTitle(e.target.value)}
+                                placeholder="e.g. Code Review Prompt"
+                                required
+                                autoFocus
+                            />
+                        </div>
 
-                <div className="form-group">
-                    <label htmlFor="description" className="form-label">Description (optional)</label>
-                    <input
-                        id="description"
-                        type="text"
-                        value={description}
-                        onChange={(e) => setDescription(e.target.value)}
-                        className="form-input"
-                        placeholder="Brief description of what this prompt does"
-                    />
-                </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="description">Description (optional)</Label>
+                            <Input
+                                id="description"
+                                value={description}
+                                onChange={(e) => setDescription(e.target.value)}
+                                placeholder="Brief description of what this prompt does"
+                            />
+                        </div>
 
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "var(--space-4)" }}>
-                    <div className="form-group">
-                        <label htmlFor="model" className="form-label">Target Model</label>
-                        <select
-                            id="model"
-                            value={modelTarget}
-                            onChange={(e) => setModelTarget(e.target.value)}
-                            className="form-input form-select"
-                        >
-                            <option value="universal">Universal</option>
-                            <option value="claude">Claude</option>
-                            <option value="gpt-4">GPT-4</option>
-                            <option value="gemini">Gemini</option>
-                            <option value="other">Other</option>
-                        </select>
-                    </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="space-y-2">
+                                <Label htmlFor="model">Target Model</Label>
+                                <Select value={modelTarget} onValueChange={setModelTarget}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select a model" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="universal">Universal</SelectItem>
+                                        <SelectItem value="claude">Claude</SelectItem>
+                                        <SelectItem value="chatgpt">ChatGPT</SelectItem>
+                                        <SelectItem value="gemini">Gemini</SelectItem>
+                                        <SelectItem value="other">Other</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
 
-                    <div className="form-group">
-                        <label htmlFor="category" className="form-label">Category (optional)</label>
-                        <select
-                            id="category"
-                            value={categoryId}
-                            onChange={(e) => setCategoryId(e.target.value)}
-                            className="form-input form-select"
-                        >
-                            <option value="">No category</option>
-                            {categories.map((c) => (
-                                <option key={c.id} value={c.id}>{c.name}</option>
-                            ))}
-                        </select>
-                    </div>
-                </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="category">Category (optional)</Label>
+                                <Select
+                                    value={categoryId}
+                                    onValueChange={setCategoryId}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select a category" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="none">No category</SelectItem>
+                                        {categories.map((c) => (
+                                            <SelectItem key={c.id} value={c.id}>
+                                                {c.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
 
-                <div className="form-group">
-                    <label htmlFor="systemPrompt" className="form-label">System Prompt (optional)</label>
-                    <textarea
-                        id="systemPrompt"
-                        value={systemPrompt}
-                        onChange={(e) => setSystemPrompt(e.target.value)}
-                        className="form-input form-textarea"
-                        placeholder="System-level instructions for the AI…"
-                        style={{ minHeight: 80 }}
-                    />
-                </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="systemPrompt">System Prompt (optional)</Label>
+                            <Textarea
+                                id="systemPrompt"
+                                value={systemPrompt}
+                                onChange={(e) => setSystemPrompt(e.target.value)}
+                                placeholder="System-level instructions for the AI..."
+                                className="min-h-[100px] font-mono text-sm"
+                            />
+                        </div>
 
-                <div className="form-group">
-                    <label htmlFor="content" className="form-label">Prompt Content</label>
-                    <textarea
-                        id="content"
-                        value={content}
-                        onChange={(e) => setContent(e.target.value)}
-                        className="form-input form-textarea prompt-editor-textarea"
-                        placeholder="Write your prompt here. Use {{variable}} for template variables…"
-                        required
-                        style={{ minHeight: 200 }}
-                    />
-                    <div className="prompt-editor-footer">
-                        <span>{content.length} characters</span>
-                        <span>~{tokenEstimate} tokens</span>
-                    </div>
-                </div>
-
-                <div style={{ display: "flex", gap: "var(--space-3)", justifyContent: "flex-end" }}>
-                    <button type="button" className="btn btn-secondary" onClick={() => router.back()}>
-                        Cancel
-                    </button>
-                    <button type="submit" className="btn btn-primary" disabled={loading}>
-                        {loading ? "Creating…" : "Create Prompt"}
-                    </button>
-                </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="content">Prompt Content</Label>
+                            <Textarea
+                                id="content"
+                                value={content}
+                                onChange={(e) => setContent(e.target.value)}
+                                placeholder="Write your prompt here. Use {{variable}} for template variables..."
+                                className="min-h-[200px] font-mono text-sm leading-relaxed"
+                                required
+                            />
+                            <div className="text-xs text-muted-foreground text-right">
+                                {content.length} characters · ~{tokenEstimate} tokens
+                            </div>
+                        </div>
+                    </CardContent>
+                    <CardFooter className="flex justify-between border-t bg-muted/40 px-6 py-4">
+                        <Button variant="ghost" type="button" onClick={() => router.back()}>
+                            Cancel
+                        </Button>
+                        <Button type="submit" disabled={loading}>
+                            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Create Prompt
+                        </Button>
+                    </CardFooter>
+                </Card>
             </form>
         </div>
     );

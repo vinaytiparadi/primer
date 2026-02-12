@@ -3,45 +3,42 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+    LayoutDashboard,
+    MessageSquare,
+    FolderOpen,
+    Settings,
+    LogOut,
+    User
+} from "lucide-react";
+import { ModeToggle } from "@/components/mode-toggle";
 
 const navItems = [
     {
         label: "Dashboard",
         href: "/",
-        icon: (
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="3" y="3" width="7" height="7" rx="1" />
-                <rect x="14" y="3" width="7" height="7" rx="1" />
-                <rect x="3" y="14" width="7" height="7" rx="1" />
-                <rect x="14" y="14" width="7" height="7" rx="1" />
-            </svg>
-        ),
+        icon: LayoutDashboard,
     },
     {
         label: "Prompts",
         href: "/prompts",
-        icon: (
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" />
-                <path d="M14 2v6h6" />
-                <path d="M16 13H8" />
-                <path d="M16 17H8" />
-                <path d="M10 9H8" />
-            </svg>
-        ),
+        icon: MessageSquare,
     },
     {
         label: "Categories",
         href: "/categories",
-        icon: (
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
-            </svg>
-        ),
+        icon: FolderOpen,
     },
 ];
 
-export default function Sidebar() {
+interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> { }
+
+export function Sidebar({ className }: SidebarProps) {
     const pathname = usePathname();
     const { data: session } = useSession();
 
@@ -53,56 +50,88 @@ export default function Sidebar() {
     const userInitial = session?.user?.name?.[0] || session?.user?.email?.[0] || "?";
 
     return (
-        <aside className="sidebar">
-            <div className="sidebar-header">
-                <span className="sidebar-logo">Primer</span>
-            </div>
-
-            <nav className="sidebar-nav">
-                {navItems.map((item) => (
-                    <Link
-                        key={item.href}
-                        href={item.href}
-                        className={`sidebar-link ${isActive(item.href) ? "active" : ""}`}
-                    >
-                        {item.icon}
-                        <span>{item.label}</span>
-                    </Link>
-                ))}
-
-                <div className="sidebar-section">
-                    <div className="sidebar-section-label">Account</div>
-                    <Link
-                        href="/settings"
-                        className={`sidebar-link ${isActive("/settings") ? "active" : ""}`}
-                    >
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                            <circle cx="12" cy="12" r="3" />
-                            <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
-                        </svg>
-                        <span>Settings</span>
-                    </Link>
+        <div className={cn("pb-12 flex flex-col h-full bg-sidebar border-r border-sidebar-border", className)}>
+            <div className="space-y-4 py-4 flex-1">
+                <div className="px-6 py-2 flex items-center justify-between">
+                    <h2 className="text-xl font-bold tracking-tight text-sidebar-foreground flex items-center gap-2">
+                        <span className="text-primary">Primer</span>
+                    </h2>
                 </div>
-            </nav>
-
-            <div className="sidebar-footer">
-                <div className="sidebar-user" onClick={() => signOut({ callbackUrl: "/login" })}>
-                    <div className="sidebar-avatar">{userInitial.toUpperCase()}</div>
-                    <div className="sidebar-user-info">
-                        <div className="sidebar-user-name">
-                            {session?.user?.name || "User"}
-                        </div>
-                        <div className="sidebar-user-email">
-                            {session?.user?.email || ""}
-                        </div>
+                <div className="px-3 py-2">
+                    <div className="space-y-1">
+                        {navItems.map((item) => (
+                            <Button
+                                key={item.href}
+                                variant={isActive(item.href) ? "secondary" : "ghost"}
+                                className={cn(
+                                    "w-full justify-start gap-2",
+                                    isActive(item.href) && "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                                )}
+                                asChild
+                            >
+                                <Link href={item.href}>
+                                    <item.icon className="h-4 w-4" />
+                                    {item.label}
+                                </Link>
+                            </Button>
+                        ))}
                     </div>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: "var(--text-tertiary)", flexShrink: 0 }}>
-                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                        <polyline points="16 17 21 12 16 7" />
-                        <line x1="21" y1="12" x2="9" y2="12" />
-                    </svg>
+                </div>
+
+                <div className="px-3 py-2">
+                    <h3 className="mb-2 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                        Account
+                    </h3>
+                    <div className="space-y-1">
+                        <Button
+                            variant={isActive("/settings") ? "secondary" : "ghost"}
+                            className={cn(
+                                "w-full justify-start gap-2",
+                                isActive("/settings") && "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                            )}
+                            asChild
+                        >
+                            <Link href="/settings">
+                                <Settings className="h-4 w-4" />
+                                Settings
+                            </Link>
+                        </Button>
+                    </div>
                 </div>
             </div>
-        </aside>
+
+            <div className="mt-auto px-6 py-4 border-t border-sidebar-border">
+                <div className="flex items-center justify-between mb-4">
+                    <p className="text-xs text-muted-foreground">Theme</p>
+                    <ModeToggle />
+                </div>
+
+                <div className="flex items-center gap-3 mb-4">
+                    <Avatar className="h-9 w-9 border border-border">
+                        <AvatarImage src={session?.user?.image || ""} alt={session?.user?.name || ""} />
+                        <AvatarFallback>{userInitial.toUpperCase()}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 overflow-hidden">
+                        <p className="text-sm font-medium leading-none truncate">
+                            {session?.user?.name || "User"}
+                        </p>
+                        <p className="text-xs text-muted-foreground truncate mt-1">
+                            {session?.user?.email || ""}
+                        </p>
+                    </div>
+                </div>
+
+                <Button
+                    variant="outline"
+                    className="w-full justify-start gap-2 text-muted-foreground hover:text-foreground"
+                    onClick={() => signOut({ callbackUrl: "/login" })}
+                >
+                    <LogOut className="h-4 w-4" />
+                    Sign Out
+                </Button>
+            </div>
+        </div>
     );
 }
+
+export default Sidebar;

@@ -2,6 +2,21 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { Plus, Trash2, FolderOpen } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog";
 
 interface Category {
     id: string;
@@ -15,7 +30,9 @@ interface Category {
 export default function CategoriesPage() {
     const [categories, setCategories] = useState<Category[]>([]);
     const [loading, setLoading] = useState(true);
-    const [showCreate, setShowCreate] = useState(false);
+    const [open, setOpen] = useState(false);
+
+    // Form state
     const [name, setName] = useState("");
     const [description, setDescription] = useState("");
     const [color, setColor] = useState("#10b981");
@@ -43,7 +60,8 @@ export default function CategoriesPage() {
         });
         setName("");
         setDescription("");
-        setShowCreate(false);
+        setColor("#10b981");
+        setOpen(false);
         setCreating(false);
         fetchCategories();
     }
@@ -55,90 +73,142 @@ export default function CategoriesPage() {
     }
 
     return (
-        <div className="animate-fade-in">
-            <div className="page-header">
+        <div className="space-y-6">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                    <h1 className="page-title">Categories</h1>
-                    <p className="page-subtitle">Organize your prompts</p>
+                    <h1 className="text-3xl font-bold tracking-tight">Categories</h1>
+                    <p className="text-muted-foreground">Organize your prompts into logical groups.</p>
                 </div>
-                <button className="btn btn-primary" onClick={() => setShowCreate(!showCreate)}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <line x1="12" y1="5" x2="12" y2="19" />
-                        <line x1="5" y1="12" x2="19" y2="12" />
-                    </svg>
-                    New Category
-                </button>
+
+                <Dialog open={open} onOpenChange={setOpen}>
+                    <DialogTrigger asChild>
+                        <Button>
+                            <Plus className="mr-2 h-4 w-4" />
+                            New Category
+                        </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-[425px]">
+                        <DialogHeader>
+                            <DialogTitle>Create Category</DialogTitle>
+                            <DialogDescription>
+                                Add a new category to group your prompts.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <form onSubmit={createCategory} className="grid gap-4 py-4">
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="name" className="text-right">
+                                    Name
+                                </Label>
+                                <Input
+                                    id="name"
+                                    value={name}
+                                    onChange={(e) => setName(e.target.value)}
+                                    className="col-span-3"
+                                    placeholder="e.g. Coding"
+                                    required
+                                    autoFocus
+                                />
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="color" className="text-right">
+                                    Color
+                                </Label>
+                                <div className="flex items-center gap-2 col-span-3">
+                                    <Input
+                                        id="color"
+                                        type="color"
+                                        value={color}
+                                        onChange={(e) => setColor(e.target.value)}
+                                        className="w-12 h-10 p-1 cursor-pointer"
+                                    />
+                                    <span className="text-sm text-muted-foreground">{color}</span>
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="description" className="text-right">
+                                    Description
+                                </Label>
+                                <Input
+                                    id="description"
+                                    value={description}
+                                    onChange={(e) => setDescription(e.target.value)}
+                                    className="col-span-3"
+                                    placeholder="Optional description"
+                                />
+                            </div>
+                            <DialogFooter>
+                                <Button type="submit" disabled={creating}>
+                                    {creating ? "Creating..." : "Create Category"}
+                                </Button>
+                            </DialogFooter>
+                        </form>
+                    </DialogContent>
+                </Dialog>
             </div>
 
-            {showCreate && (
-                <form onSubmit={createCategory} className="card animate-slide-up" style={{ marginBottom: "var(--space-6)" }}>
-                    <h3 style={{ fontSize: "0.9375rem", fontWeight: 600, marginBottom: "var(--space-4)" }}>Create Category</h3>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "var(--space-4)" }}>
-                        <div className="form-group">
-                            <label className="form-label">Name</label>
-                            <input type="text" value={name} onChange={(e) => setName(e.target.value)} className="form-input" placeholder="e.g. Coding" required autoFocus />
-                        </div>
-                        <div className="form-group">
-                            <label className="form-label">Color</label>
-                            <div style={{ display: "flex", alignItems: "center", gap: "var(--space-2)" }}>
-                                <input type="color" value={color} onChange={(e) => setColor(e.target.value)} style={{ width: 42, height: 42, border: "none", borderRadius: "var(--radius-md)", cursor: "pointer" }} />
-                                <span style={{ fontSize: "0.8125rem", color: "var(--text-secondary)" }}>{color}</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="form-group" style={{ marginTop: "var(--space-3)" }}>
-                        <label className="form-label">Description (optional)</label>
-                        <input type="text" value={description} onChange={(e) => setDescription(e.target.value)} className="form-input" placeholder="Brief description" />
-                    </div>
-                    <div style={{ display: "flex", gap: "var(--space-3)", justifyContent: "flex-end", marginTop: "var(--space-4)" }}>
-                        <button type="button" className="btn btn-secondary btn-sm" onClick={() => setShowCreate(false)}>Cancel</button>
-                        <button type="submit" className="btn btn-primary btn-sm" disabled={creating}>
-                            {creating ? "Creating…" : "Create"}
-                        </button>
-                    </div>
-                </form>
-            )}
-
             {loading ? (
-                <div className="prompt-grid">
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {[1, 2, 3].map((i) => (
-                        <div key={i} className="card">
-                            <div className="skeleton" style={{ width: "50%", height: 18, marginBottom: 8 }} />
-                            <div className="skeleton" style={{ width: "30%", height: 14 }} />
-                        </div>
+                        <Card key={i}>
+                            <CardHeader className="space-y-2">
+                                <Skeleton className="h-5 w-1/2" />
+                                <Skeleton className="h-4 w-full" />
+                            </CardHeader>
+                            <CardContent>
+                                <Skeleton className="h-4 w-1/4" />
+                            </CardContent>
+                        </Card>
                     ))}
                 </div>
             ) : categories.length === 0 ? (
-                <div className="empty-state">
-                    <svg className="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
-                    </svg>
-                    <h3 className="empty-state-title">No categories yet</h3>
-                    <p className="empty-state-description">Create categories to organize your prompts.</p>
+                <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center animate-in fade-in-50">
+                    <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+                        <FolderOpen className="h-6 w-6 text-muted-foreground" />
+                    </div>
+                    <h3 className="mt-4 text-lg font-semibold">No categories yet</h3>
+                    <p className="mb-4 mt-2 text-sm text-muted-foreground max-w-sm mx-auto">
+                        Create categories to organize your prompts into specific topics or projects.
+                    </p>
+                    <Button onClick={() => setOpen(true)}>
+                        Create Category
+                    </Button>
                 </div>
             ) : (
-                <div className="prompt-grid">
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                     {categories.map((cat) => (
-                        <div key={cat.id} className="card" style={{ position: "relative" }}>
-                            <div className="card-header">
-                                <div style={{ display: "flex", alignItems: "center", gap: "var(--space-3)" }}>
-                                    <div className="category-dot" style={{ background: cat.color || "var(--accent-500)" }} />
-                                    <Link href={`/categories/${cat.slug}`} style={{ textDecoration: "none" }}>
-                                        <div className="card-title">{cat.name}</div>
-                                    </Link>
+                        <Card key={cat.id} className="group relative overflow-hidden transition-all hover:border-primary/50">
+                            <CardHeader className="pb-2">
+                                <div className="flex items-start justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <div
+                                            className="h-3 w-3 rounded-full flex-shrink-0"
+                                            style={{ backgroundColor: cat.color || "#10b981" }}
+                                        />
+                                        <Link href={`/categories/${cat.slug}`} className="font-semibold hover:underline decoration-primary underline-offset-4 decoration-2">
+                                            {cat.name}
+                                        </Link>
+                                    </div>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                                        onClick={() => deleteCategory(cat.id)}
+                                    >
+                                        <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive" />
+                                    </Button>
                                 </div>
-                                <button className="btn btn-ghost btn-icon btn-sm" onClick={() => deleteCategory(cat.id)} title="Delete">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                        <polyline points="3 6 5 6 21 6" />
-                                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                                    </svg>
-                                </button>
-                            </div>
-                            {cat.description && <p className="card-description">{cat.description}</p>}
-                            <div style={{ marginTop: "var(--space-3)", fontSize: "0.8125rem", color: "var(--text-tertiary)" }}>
-                                {cat._count.prompts} prompt{cat._count.prompts !== 1 ? "s" : ""}
-                            </div>
-                        </div>
+                            </CardHeader>
+                            <CardContent>
+                                {cat.description && (
+                                    <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
+                                        {cat.description}
+                                    </p>
+                                )}
+                                <p className="text-xs font-medium text-muted-foreground mt-2">
+                                    {cat._count.prompts} {cat._count.prompts === 1 ? "prompt" : "prompts"}
+                                </p>
+                            </CardContent>
+                        </Card>
                     ))}
                 </div>
             )}

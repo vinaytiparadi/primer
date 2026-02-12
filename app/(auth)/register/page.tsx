@@ -4,6 +4,11 @@ import { useState } from "react";
 import { signIn } from "next-auth/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Loader2 } from "lucide-react";
 
 export default function RegisterPage() {
     const router = useRouter();
@@ -47,67 +52,66 @@ export default function RegisterPage() {
     }
 
     return (
-        <form onSubmit={handleSubmit} className="auth-form">
-            <h2 className="auth-title">Create your account</h2>
-
-            {error && <div className="auth-error">{error}</div>}
-
-            <div className="form-group">
-                <label htmlFor="name" className="form-label">
-                    Name
-                </label>
-                <input
-                    id="name"
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="form-input"
-                    placeholder="Your name"
-                    autoFocus
-                />
-            </div>
-
-            <div className="form-group">
-                <label htmlFor="email" className="form-label">
-                    Email
-                </label>
-                <input
-                    id="email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="form-input"
-                    placeholder="you@example.com"
-                    required
-                />
-            </div>
-
-            <div className="form-group">
-                <label htmlFor="password" className="form-label">
-                    Password
-                </label>
-                <input
-                    id="password"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="form-input"
-                    placeholder="Min. 6 characters"
-                    required
-                    minLength={6}
-                />
-            </div>
-
-            <button type="submit" className="btn btn-primary btn-full" disabled={loading}>
-                {loading ? "Creating account…" : "Create account"}
-            </button>
-
-            <p className="auth-footer">
-                Already have an account?{" "}
-                <Link href="/login" className="auth-link">
-                    Sign in
-                </Link>
-            </p>
-        </form>
+        <Card className="w-full">
+            <CardHeader>
+                <CardTitle>Create an account</CardTitle>
+                <CardDescription>
+                    Enter your information to create your account
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    {error && (
+                        <div className="bg-destructive/15 text-destructive text-sm p-3 rounded-md">
+                            {error}
+                        </div>
+                    )}
+                    <div className="space-y-2">
+                        <Label htmlFor="name">Name</Label>
+                        <Input
+                            id="name"
+                            placeholder="John Doe"
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            required
+                            autoFocus
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="email">Email</Label>
+                        <Input
+                            id="email"
+                            type="email"
+                            placeholder="m@example.com"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            required
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="password">Password</Label>
+                        <Input
+                            id="password"
+                            type="password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            required
+                        />
+                    </div>
+                    <Button type="submit" className="w-full" disabled={loading}>
+                        {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Create account
+                    </Button>
+                </form>
+            </CardContent>
+            <CardFooter className="flex justify-center">
+                <p className="text-sm text-muted-foreground">
+                    Already have an account?{" "}
+                    <Link href="/login" className="underline underline-offset-4 hover:text-primary">
+                        Sign in
+                    </Link>
+                </p>
+            </CardFooter>
+        </Card>
     );
 }

@@ -2,6 +2,21 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+    Plus,
+    Search,
+    Star,
+    Copy,
+    FileText,
+    Layers,
+    Tag
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface Prompt {
     id: string;
@@ -72,31 +87,27 @@ export default function PromptsPage() {
     }
 
     return (
-        <div className="animate-fade-in">
-            <div className="page-header">
+        <div className="space-y-6">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                    <h1 className="page-title">Prompts</h1>
-                    <p className="page-subtitle">{total} prompts</p>
+                    <h1 className="text-3xl font-bold tracking-tight">Prompts</h1>
+                    <p className="text-muted-foreground">{total} prompts in your library</p>
                 </div>
-                <Link href="/prompts/new" className="btn btn-primary">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <line x1="12" y1="5" x2="12" y2="19" />
-                        <line x1="5" y1="12" x2="19" y2="12" />
-                    </svg>
-                    New Prompt
-                </Link>
+                <Button asChild>
+                    <Link href="/prompts/new">
+                        <Plus className="mr-2 h-4 w-4" />
+                        New Prompt
+                    </Link>
+                </Button>
             </div>
 
-            <div className="filter-bar">
-                <div className="search-container" style={{ maxWidth: 360 }}>
-                    <svg className="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <circle cx="11" cy="11" r="8" />
-                        <line x1="21" y1="21" x2="16.65" y2="16.65" />
-                    </svg>
-                    <input
-                        type="text"
-                        className="search-input"
-                        placeholder="Search prompts…"
+            <div className="flex items-center space-x-2">
+                <div className="relative flex-1 max-w-sm">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                        type="search"
+                        placeholder="Search prompts..."
+                        className="pl-8"
                         value={search}
                         onChange={(e) => {
                             setSearch(e.target.value);
@@ -107,78 +118,88 @@ export default function PromptsPage() {
             </div>
 
             {loading ? (
-                <div className="prompt-list">
-                    {[1, 2, 3].map((i) => (
-                        <div key={i} className="prompt-item" style={{ cursor: "default" }}>
-                            <div className="prompt-item-content">
-                                <div className="skeleton" style={{ width: "60%", height: 18, marginBottom: 8 }} />
-                                <div className="skeleton" style={{ width: "80%", height: 14 }} />
-                            </div>
-                        </div>
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {[1, 2, 3, 4, 5, 6].map((i) => (
+                        <Card key={i} className="overflow-hidden">
+                            <CardContent className="p-6">
+                                <Skeleton className="h-6 w-3/4 mb-4" />
+                                <Skeleton className="h-4 w-full mb-2" />
+                                <Skeleton className="h-4 w-2/3" />
+                            </CardContent>
+                        </Card>
                     ))}
                 </div>
             ) : prompts.length === 0 ? (
-                <div className="empty-state">
-                    <svg className="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" />
-                        <path d="M14 2v6h6" />
-                    </svg>
-                    <h3 className="empty-state-title">
+                <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center animate-in fade-in-50">
+                    <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+                        <FileText className="h-6 w-6 text-muted-foreground" />
+                    </div>
+                    <h3 className="mt-4 text-lg font-semibold">
                         {search ? "No results found" : "No prompts yet"}
                     </h3>
-                    <p className="empty-state-description">
+                    <p className="mb-4 mt-2 text-sm text-muted-foreground max-w-sm mx-auto">
                         {search
                             ? `No prompts match "${search}". Try different keywords.`
-                            : "Create your first prompt to get started."}
+                            : "Create your first prompt to get started collecting and organizing your AI interactions."}
                     </p>
                     {!search && (
-                        <Link href="/prompts/new" className="btn btn-primary">
-                            Create your first prompt
-                        </Link>
+                        <Button asChild>
+                            <Link href="/prompts/new">Create Prompt</Link>
+                        </Button>
                     )}
                 </div>
             ) : (
-                <div className="prompt-list">
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                     {prompts.map((prompt) => (
-                        <Link key={prompt.id} href={`/prompts/${prompt.id}`} className="prompt-item">
-                            <div className="prompt-item-content">
-                                <div className="prompt-item-title">{prompt.title}</div>
-                                {prompt.description && (
-                                    <div className="prompt-item-desc">{prompt.description}</div>
-                                )}
-                                <div className="prompt-item-meta">
-                                    {prompt.category && (
-                                        <span className="badge badge-accent">{prompt.category.name}</span>
-                                    )}
-                                    {prompt.versions.slice(0, 3).map((v) => (
-                                        <span key={v.id} className="badge badge-model">
-                                            {v.modelTarget}
-                                        </span>
-                                    ))}
-                                    {prompt.tags.slice(0, 3).map((t) => (
-                                        <span key={t.tag.id} className="badge badge-default">
-                                            {t.tag.name}
-                                        </span>
-                                    ))}
-                                </div>
-                            </div>
-                            <div className="prompt-item-actions">
-                                <button
-                                    className="btn btn-ghost btn-icon"
-                                    onClick={(e) => toggleFavorite(e, prompt.id, prompt.isFavorite)}
-                                    title={prompt.isFavorite ? "Unfavorite" : "Favorite"}
-                                >
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill={prompt.isFavorite ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={prompt.isFavorite ? { color: "var(--color-warning)" } : {}}>
-                                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-                                    </svg>
-                                </button>
-                                <button className="btn btn-ghost btn-icon" onClick={(e) => copyContent(e, prompt)} title="Copy">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                                    </svg>
-                                </button>
-                            </div>
+                        <Link key={prompt.id} href={`/prompts/${prompt.id}`} className="block group transition-all hover:scale-[1.01] focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded-xl">
+                            <Card className="h-full overflow-hidden border-muted-foreground/20 hover:border-primary/50 transition-colors">
+                                <CardContent className="p-5 flex flex-col h-full">
+                                    <div className="flex items-start justify-between mb-2">
+                                        <h3 className="font-semibold leading-none tracking-tight line-clamp-1 group-hover:text-primary transition-colors">
+                                            {prompt.title}
+                                        </h3>
+                                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-8 w-8"
+                                                onClick={(e) => toggleFavorite(e, prompt.id, prompt.isFavorite)}
+                                                title={prompt.isFavorite ? "Unfavorite" : "Favorite"}
+                                            >
+                                                <Star
+                                                    className={cn("h-4 w-4", prompt.isFavorite ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground")}
+                                                />
+                                            </Button>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-8 w-8"
+                                                onClick={(e) => copyContent(e, prompt)}
+                                                title="Copy content"
+                                            >
+                                                <Copy className="h-4 w-4 text-muted-foreground" />
+                                            </Button>
+                                        </div>
+                                    </div>
+
+                                    <p className="text-sm text-muted-foreground line-clamp-3 mb-4 flex-1">
+                                        {prompt.description || "No description provided."}
+                                    </p>
+
+                                    <div className="flex flex-wrap gap-2 mt-auto">
+                                        {prompt.category && (
+                                            <Badge variant="secondary" className="bg-primary/10 text-primary hover:bg-primary/20">
+                                                {prompt.category.name}
+                                            </Badge>
+                                        )}
+                                        {prompt.versions.slice(0, 2).map((v) => (
+                                            <Badge key={v.id} variant="outline" className="text-xs font-normal">
+                                                {v.modelTarget}
+                                            </Badge>
+                                        ))}
+                                    </div>
+                                </CardContent>
+                            </Card>
                         </Link>
                     ))}
                 </div>

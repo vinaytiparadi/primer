@@ -1,53 +1,97 @@
 "use client";
 
 import { signOut, useSession } from "next-auth/react";
+import { Button } from "@/components/ui/button";
+import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { Download, LogOut, User } from "lucide-react";
 
 export default function SettingsPage() {
     const { data: session } = useSession();
 
     return (
-        <div className="animate-fade-in" style={{ maxWidth: 600 }}>
-            <div className="page-header">
-                <div>
-                    <h1 className="page-title">Settings</h1>
-                    <p className="page-subtitle">Manage your account and preferences</p>
-                </div>
+        <div className="space-y-6 max-w-2xl mx-auto">
+            <div>
+                <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
+                <p className="text-muted-foreground">Manage your account and preferences.</p>
             </div>
 
-            <div className="card" style={{ marginBottom: "var(--space-4)" }}>
-                <h3 style={{ fontSize: "0.9375rem", fontWeight: 600, marginBottom: "var(--space-4)" }}>Profile</h3>
-                <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-3)" }}>
-                    <div>
-                        <span style={{ fontSize: "0.8125rem", color: "var(--text-secondary)" }}>Name</span>
-                        <p style={{ fontSize: "0.9375rem" }}>{session?.user?.name || "—"}</p>
-                    </div>
-                    <div>
-                        <span style={{ fontSize: "0.8125rem", color: "var(--text-secondary)" }}>Email</span>
-                        <p style={{ fontSize: "0.9375rem" }}>{session?.user?.email || "—"}</p>
-                    </div>
-                </div>
-            </div>
+            <Separator />
 
-            <div className="card" style={{ marginBottom: "var(--space-4)" }}>
-                <h3 style={{ fontSize: "0.9375rem", fontWeight: 600, marginBottom: "var(--space-4)" }}>Data</h3>
-                <div style={{ display: "flex", gap: "var(--space-3)" }}>
-                    <a href="/api/export?format=json" className="btn btn-secondary btn-sm" download>
-                        Export as JSON
-                    </a>
-                    <a href="/api/export?format=csv" className="btn btn-secondary btn-sm" download>
-                        Export as CSV
-                    </a>
-                </div>
-            </div>
+            <div className="grid gap-6">
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <User className="h-5 w-5" />
+                            Profile
+                        </CardTitle>
+                        <CardDescription>
+                            Your personal information.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="space-y-1">
+                            <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                                Name
+                            </label>
+                            <p className="text-sm text-muted-foreground">
+                                {session?.user?.name || "—"}
+                            </p>
+                        </div>
+                        <div className="space-y-1">
+                            <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                                Email
+                            </label>
+                            <p className="text-sm text-muted-foreground">
+                                {session?.user?.email || "—"}
+                            </p>
+                        </div>
+                    </CardContent>
+                </Card>
 
-            <div className="card">
-                <h3 style={{ fontSize: "0.9375rem", fontWeight: 600, marginBottom: "var(--space-4)", color: "var(--color-danger)" }}>Danger Zone</h3>
-                <button
-                    className="btn btn-danger btn-sm"
-                    onClick={() => signOut({ callbackUrl: "/login" })}
-                >
-                    Sign Out
-                </button>
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <Download className="h-5 w-5" />
+                            Data Export
+                        </CardTitle>
+                        <CardDescription>
+                            Download your prompts and data.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="flex flex-col sm:flex-row gap-4">
+                        <Button variant="outline" asChild className="w-full sm:w-auto">
+                            <a href="/api/export?format=json" download>
+                                Export as JSON
+                            </a>
+                        </Button>
+                        <Button variant="outline" asChild className="w-full sm:w-auto">
+                            <a href="/api/export?format=csv" download>
+                                Export as CSV
+                            </a>
+                        </Button>
+                    </CardContent>
+                </Card>
+
+                <Card className="border-destructive/20 bg-destructive/5">
+                    <CardHeader>
+                        <CardTitle className="text-destructive flex items-center gap-2">
+                            <LogOut className="h-5 w-5" />
+                            Danger Zone
+                        </CardTitle>
+                        <CardDescription className="text-destructive/80">
+                            Actions that affect your session.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <Button
+                            variant="destructive"
+                            onClick={() => signOut({ callbackUrl: "/login" })}
+                        >
+                            Sign Out
+                        </Button>
+                    </CardContent>
+                </Card>
             </div>
         </div>
     );
