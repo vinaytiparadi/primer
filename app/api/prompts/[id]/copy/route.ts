@@ -16,7 +16,6 @@ export async function POST(
         where: { id, userId: session.user.id },
         include: {
             versions: true,
-            tags: true,
         },
     });
 
@@ -39,13 +38,9 @@ export async function POST(
                     notes: v.notes,
                 })),
             },
-            tags: {
-                create: original.tags.map((t) => ({ tagId: t.tagId })),
-            },
         },
         include: {
             versions: true,
-            tags: { include: { tag: true } },
             category: true,
         },
     });

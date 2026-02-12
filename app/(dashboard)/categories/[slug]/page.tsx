@@ -24,7 +24,6 @@ export default async function CategoryDetailPage({
                 orderBy: { updatedAt: "desc" },
                 include: {
                     versions: { take: 1, orderBy: { createdAt: "desc" } },
-                    tags: { include: { tag: true } },
                 },
             },
         },
