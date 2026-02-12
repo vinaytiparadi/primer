@@ -14,7 +14,7 @@ Primer is a mobile-responsive web application designed as a specialized, highly 
 | Styling | Tailwind CSS 3 | Rapid UI development |
 | Backend Runtime | Node.js 20+ | Same language front and back |
 | API Layer | Next.js Route Handlers (REST) | No separate server needed |
-| Database | PostgreSQL 16 | Reliable, free-tier available, built-in full-text search |
+| Database | PostgreSQL 17 | Reliable, free-tier available, built-in full-text search |
 | ORM | Prisma | Type-safe queries, easy migrations, great DX |
 | Authentication | NextAuth.js v5 (Auth.js) | Drop-in auth with multiple providers |
 | Search | PostgreSQL Full-Text Search (tsvector + pg_trgm) | No extra service needed |
@@ -619,7 +619,7 @@ STEP 2 — Create a project
   → Click "New Project"
   → Name: "primer"
   → Region: pick closest to you
-  → PostgreSQL version: 16
+  → PostgreSQL version: 17
   → Click "Create Project"
 
 STEP 3 — Get your connection string

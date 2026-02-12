@@ -1,4 +1,71 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Primer 
+
+Primer is a specialized, mobile-responsive prompt management application designed for AI enthusiasts and developers. It provides a centralized hub to store, version, and organize prompts for various AI models like Claude, ChatGPT, and Gemini.
+
+## Features
+
+- **Prompt Management**: Create, edit, and organize prompts with ease.
+- **Versioning**: Maintain different versions of prompts for different models or iterations.
+- **Categories**: Organize prompts into customizable categories.
+- **Search**: Quickly find prompts using a built-in search functionality.
+- **Authentication**: Secure access with user account management.
+- **Responsive Design**: Optimized for both desktop and mobile use.
+- **Command Palette**: Quick navigation and actions (`Cmd/Ctrl + K`).
+
+## Tech Stack
+
+- **Framework**: [Next.js 16](https://nextjs.org/) (App Router)
+- **Language**: [TypeScript](https://www.typescriptlang.org/)
+- **Styling**: [Tailwind CSS 4](https://tailwindcss.com/)
+- **Database**: [PostgreSQL](https://www.postgresql.org/) (via [Neon](https://neon.tech/))
+- **ORM**: [Prisma](https://www.prisma.io/)
+- **Authentication**: [NextAuth.js v5](https://authjs.dev/)
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js 20+ installed
+- A PostgreSQL database (e.g., local or Neon)
+
+### Installation
+
+1. Clone the repository:
+   ```bash
+   git clone <repository-url>
+   cd primer
+   ```
+
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+3. Set up environment variables:
+   Copy `.env.example` (or create one) to `.env` and add your database URL and auth secret.
+   ```bash
+   DATABASE_URL="postgresql://user:password@host:port/dbname?sslmode=require"
+   NEXTAUTH_SECRET="your-secret-key"
+   NEXTAUTH_URL="http://localhost:3000"
+   ```
+
+4. Initialize the database:
+   ```bash
+   npx prisma generate
+   npx prisma migrate dev --name init
+   ```
+
+5. Run the development server:
+   ```bash
+   npm run dev
+   ```
+
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+
+## License
+
+This project is open source and available under the [MIT License](LICENSE).
+
 
 ## Getting Started
 
