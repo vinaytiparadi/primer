@@ -42,9 +42,11 @@ const navItems = [
     },
 ];
 
-type SidebarProps = React.HTMLAttributes<HTMLDivElement>;
+interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {
+    onNavigate?: () => void;
+}
 
-export function Sidebar({ className }: SidebarProps) {
+export function Sidebar({ className, onNavigate }: SidebarProps) {
     const pathname = usePathname();
     const searchParams = useSearchParams();
     const { data: session } = useSession();
@@ -88,6 +90,7 @@ export function Sidebar({ className }: SidebarProps) {
                             <Button
                                 key={item.href}
                                 variant={isActive(item.href) ? "secondary" : "ghost"}
+                                onClick={() => onNavigate?.()}
                                 className={cn(
                                     "w-full justify-start gap-2",
                                     isActive(item.href) && "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
@@ -110,6 +113,7 @@ export function Sidebar({ className }: SidebarProps) {
                     <div className="space-y-1">
                         <Button
                             variant={isActive("/settings") ? "secondary" : "ghost"}
+                            onClick={() => onNavigate?.()}
                             className={cn(
                                 "w-full justify-start gap-2",
                                 isActive("/settings") && "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
