@@ -18,11 +18,23 @@ export function slugify(text: string): string {
 }
 
 export function formatDate(date: Date | string): string {
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+
+    // Check if date is valid
+    if (isNaN(dateObj.getTime())) {
+        console.error('Invalid date:', date);
+        return 'Invalid Date';
+    }
+
     return new Intl.DateTimeFormat("en-US", {
         month: "short",
         day: "numeric",
         year: "numeric",
-    }).format(new Date(date));
+    }).format(dateObj);
+}
+
+export function formatDateString(dateString: string | Date): string {
+    return formatDate(dateString);
 }
 
 export function copyToClipboard(text: string): Promise<void> {

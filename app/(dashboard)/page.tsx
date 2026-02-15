@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { formatDate } from "@/lib/utils";
 
 export default async function DashboardPage() {
     const session = await auth();
@@ -135,7 +136,7 @@ export default async function DashboardPage() {
                                             </td>
 
                                             <td className="p-4 text-left align-middle text-muted-foreground text-xs">
-                                                {new Date(prompt.updatedAt).toLocaleDateString()}
+                                                {formatDate(prompt.updatedAt)}
                                             </td>
                                         </tr>
                                     ))}

@@ -19,7 +19,7 @@ import {
     Trash2,
     Loader2
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, formatDate } from "@/lib/utils";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -304,7 +304,7 @@ function PromptsContent() {
                                             </div>
                                         </td>
                                         <td className="p-4 text-left align-middle hidden lg:table-cell text-muted-foreground text-xs whitespace-nowrap">
-                                            {new Date(prompt.updatedAt).toLocaleDateString()}
+                                            {formatDate(prompt.updatedAt)}
                                         </td>
                                         <td className="p-4 align-middle text-right">
                                             <div className="flex items-center justify-end">

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, MessageSquare } from "lucide-react";
+import { formatDate } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
@@ -95,7 +96,7 @@ export default async function CategoryDetailPage({
                                         </td>
 
                                         <td className="p-4 text-left align-middle text-muted-foreground text-xs">
-                                            {new Date(prompt.updatedAt).toLocaleDateString()}
+                                            {formatDate(prompt.updatedAt)}
                                         </td>
                                     </tr>
                                 ))}
