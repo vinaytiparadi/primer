@@ -29,7 +29,16 @@ export async function GET(req: NextRequest) {
         },
         include: {
             category: true,
-            versions: { take: 1, orderBy: { createdAt: "desc" } },
+            versions: {
+                take: 1,
+                orderBy: { createdAt: "desc" },
+                select: {
+                    id: true,
+                    modelTarget: true,
+                    versionLabel: true,
+                    isActive: true
+                }
+            },
         },
         orderBy: { updatedAt: "desc" },
         take: 20,

@@ -31,7 +31,15 @@ export async function GET(req: NextRequest) {
             where,
             include: {
                 category: true,
-                versions: { orderBy: { createdAt: "asc" } },
+                versions: {
+                    select: {
+                        id: true,
+                        modelTarget: true,
+                        versionLabel: true,
+                        isActive: true
+                    },
+                    orderBy: { createdAt: "asc" }
+                },
             },
             orderBy,
             skip: (page - 1) * limit,
