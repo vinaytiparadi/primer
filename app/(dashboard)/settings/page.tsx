@@ -1,13 +1,32 @@
 "use client";
 
+import { useState } from "react";
 import { signOut, useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Download, LogOut, User } from "lucide-react";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Download, LogOut, Trash2, User } from "lucide-react";
 
 export default function SettingsPage() {
     const { data: session } = useSession();
+    const [deleting, setDeleting] = useState(false);
+
+    async function handleDeleteAccount() {
+        setDeleting(true);
+        await fetch("/api/user", { method: "DELETE" });
+        await signOut({ callbackUrl: "/login" });
+    }
 
     return (
         <div className="space-y-6 max-w-2xl mx-auto">
@@ -80,16 +99,43 @@ export default function SettingsPage() {
                             Danger Zone
                         </CardTitle>
                         <CardDescription className="text-destructive/80">
-                            Actions that affect your session.
+                            Irreversible actions that affect your account.
                         </CardDescription>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="flex flex-col sm:flex-row gap-3">
                         <Button
                             variant="destructive"
                             onClick={() => signOut({ callbackUrl: "/login" })}
                         >
                             Sign Out
                         </Button>
+
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button variant="destructive">
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                    Delete Account
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>Delete your account?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        This will permanently delete your account and all your prompts, versions, and categories. This action cannot be undone.
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction
+                                        onClick={handleDeleteAccount}
+                                        disabled={deleting}
+                                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                    >
+                                        {deleting ? "Deleting..." : "Yes, delete my account"}
+                                    </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
                     </CardContent>
                 </Card>
             </div>
