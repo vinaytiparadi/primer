@@ -4,15 +4,13 @@ import type { NextRequest } from "next/server";
 export async function proxy(request: NextRequest) {
     const { pathname } = request.nextUrl;
 
-    const isAuthPage =
+    const isPublicPath =
         pathname.startsWith("/login") ||
-        pathname.startsWith("/register");
-    const isPublicAsset =
         pathname.startsWith("/api/auth") ||
         pathname.startsWith("/_next") ||
         pathname === "/favicon.ico";
 
-    if (isPublicAsset) {
+    if (isPublicPath) {
         return NextResponse.next();
     }
 
@@ -20,12 +18,8 @@ export async function proxy(request: NextRequest) {
         request.cookies.get("authjs.session-token")?.value ||
         request.cookies.get("__Secure-authjs.session-token")?.value;
 
-    if (!token && !isAuthPage) {
+    if (!token) {
         return NextResponse.redirect(new URL("/login", request.url));
-    }
-
-    if (token && isAuthPage) {
-        return NextResponse.redirect(new URL("/", request.url));
     }
 
     return NextResponse.next();
