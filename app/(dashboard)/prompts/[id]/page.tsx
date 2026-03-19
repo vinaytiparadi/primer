@@ -105,7 +105,7 @@ export default function PromptDetailPage() {
     }, []);
 
     useEffect(() => {
-        fetchPrompt();
+        fetchPrompt(); // eslint-disable-line react-hooks/set-state-in-effect
         fetchCategories();
     }, [fetchPrompt, fetchCategories]);
 

@@ -54,16 +54,16 @@ export default function CategoriesPage() {
     const [color, setColor] = useState("#10b981");
     const [creating, setCreating] = useState(false);
 
-    useEffect(() => {
-        fetchCategories();
-    }, []);
-
     async function fetchCategories() {
         const res = await fetch("/api/categories");
         const data = await res.json();
         setCategories(data);
         setLoading(false);
     }
+
+    useEffect(() => {
+        fetchCategories(); // eslint-disable-line react-hooks/set-state-in-effect
+    }, []);
 
     async function createCategory(e: React.FormEvent) {
         e.preventDefault();
