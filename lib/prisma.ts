@@ -7,16 +7,18 @@ const globalForPrisma = globalThis as unknown as {
 };
 
 function createPrismaClient(): PrismaClient {
-    const connectionString = process.env.DATABASE_URL;
-    if (!connectionString) {
+    const raw = process.env.DATABASE_URL;
+    if (!raw) {
         throw new Error("DATABASE_URL environment variable is not set");
     }
-    // Optimization for Serverless (Vercel): 
-    // Constrain the connection pool size per function instance. 
-    // In serverless, it's highly recommended to use a connection pooler like PgBouncer or Prisma Accelerate.
-    // Ensure your DATABASE_URL points to the pooled connection (e.g. Supabase pooler mode or Neon pooler).
+    // Opt into libpq-compatible SSL semantics to silence pg-connection-string v3
+    // migration warning. Matches how Neon's pooled connections expect to be used.
+    const url = new URL(raw);
+    if (!url.searchParams.has("uselibpqcompat")) {
+        url.searchParams.set("uselibpqcompat", "true");
+    }
     const pool = new pg.Pool({
-        connectionString,
+        connectionString: url.toString(),
         max: process.env.NODE_ENV === "production" ? 1 : undefined
     });
     const adapter = new PrismaPg(pool);
