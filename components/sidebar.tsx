@@ -15,7 +15,8 @@ import {
     Settings,
     LogOut,
     User,
-    Star
+    Star,
+    NotebookPen
 } from "lucide-react";
 import { ModeToggle } from "@/components/mode-toggle";
 
@@ -39,6 +40,11 @@ const navItems = [
         label: "Categories",
         href: "/categories",
         icon: FolderOpen,
+    },
+    {
+        label: "Scratchpad",
+        href: "/scratchpad",
+        icon: NotebookPen,
     },
 ];
 
