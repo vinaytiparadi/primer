@@ -21,6 +21,7 @@ model User {
   accounts    Account[]
   prompts     Prompt[]
   categories  Category[]
+  scratchpad  Scratchpad?
 
   @@map("users")
 }
@@ -104,4 +105,16 @@ model PromptVersion {
 
   @@index([promptId, modelTarget])
   @@map("prompt_versions")
+}
+
+model Scratchpad {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  content   String   @default("") @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("scratchpads")
 }
