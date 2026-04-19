@@ -199,9 +199,6 @@ export function ScratchpadEditor({
                         >
                             <Save className="h-3 w-3" />
                             {state === "saving" ? "Saving" : "Save"}
-                            <kbd className="ml-1 hidden rounded border border-primary-foreground/30 bg-primary-foreground/10 px-1 font-mono text-[10px] opacity-80 sm:inline">
-                                {isMac ? "⌘S" : "Ctrl+S"}
-                            </kbd>
                         </Button>
                     )}
                     <SaveIndicator state={state} dirty={dirty} autoSave={autoSave} />
