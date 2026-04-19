@@ -24,6 +24,7 @@ export function ScratchpadEditor({
     const [wrapCounts, setWrapCounts] = useState<number[]>([]);
     const [autoSave, setAutoSave] = useState(initialAutoSave);
     const [dirty, setDirty] = useState(false);
+    const [isMac, setIsMac] = useState(false);
     const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const latestContentRef = useRef(initialContent);
@@ -95,6 +96,7 @@ export function ScratchpadEditor({
         }
         setLastSaved(new Date(initialUpdatedAt));
         setNow(new Date());
+        setIsMac(/mac/i.test(navigator.platform));
         const id = setInterval(() => setNow(new Date()), 30_000);
         return () => {
             clearInterval(id);
@@ -187,16 +189,19 @@ export function ScratchpadEditor({
                     <p className="text-muted-foreground">Paste, think, come back later.</p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
-                    <AutoSaveToggle value={autoSave} onChange={toggleAutoSave} />
                     {!autoSave && (
                         <Button
                             size="sm"
                             onClick={saveNow}
                             disabled={!dirty || state === "saving"}
+                            title={isMac ? "Save (⌘S)" : "Save (Ctrl+S)"}
                             className="h-7 gap-1.5 text-xs"
                         >
                             <Save className="h-3 w-3" />
                             {state === "saving" ? "Saving" : "Save"}
+                            <kbd className="ml-1 hidden rounded border border-primary-foreground/30 bg-primary-foreground/10 px-1 font-mono text-[10px] opacity-80 sm:inline">
+                                {isMac ? "⌘S" : "Ctrl+S"}
+                            </kbd>
                         </Button>
                     )}
                     <SaveIndicator state={state} dirty={dirty} autoSave={autoSave} />
@@ -272,15 +277,19 @@ export function ScratchpadEditor({
                 }}
             />
 
-            <footer className="flex items-center justify-between pt-3 px-1 text-xs text-muted-foreground/70 tabular-nums">
+            <footer className="flex flex-wrap items-center justify-between gap-3 pt-3 px-1 text-xs text-muted-foreground/70 tabular-nums">
                 <span>
                     {wordCount} {wordCount === 1 ? "word" : "words"}
                     <span className="mx-2 text-muted-foreground/40">·</span>
                     {content.length.toLocaleString()} {content.length === 1 ? "character" : "characters"}
                 </span>
-                <span title={lastSaved ? lastSaved.toLocaleString() : undefined}>
-                    {lastSaved && now ? `Last saved ${formatSaved(lastSaved, now)}` : "\u00A0"}
-                </span>
+                <div className="flex items-center gap-3">
+                    <AutoSaveToggle value={autoSave} onChange={toggleAutoSave} />
+                    <span className="text-muted-foreground/40">·</span>
+                    <span title={lastSaved ? lastSaved.toLocaleString() : undefined}>
+                        {lastSaved && now ? `Last saved ${formatSaved(lastSaved, now)}` : "\u00A0"}
+                    </span>
+                </div>
             </footer>
         </div>
     );
@@ -380,18 +389,21 @@ function AutoSaveToggle({
     onChange: (v: boolean) => void;
 }) {
     return (
-        <label className="inline-flex cursor-pointer select-none items-center gap-2 rounded-full border border-border/60 bg-card/60 px-3 py-1 text-xs text-muted-foreground transition-colors hover:text-foreground">
+        <label
+            className="inline-flex cursor-pointer select-none items-center gap-1.5 transition-colors hover:text-foreground"
+            title={value ? "Auto-save is on" : "Auto-save is off"}
+        >
             <span>Auto-save</span>
             <span
                 className={cn(
-                    "relative h-4 w-7 rounded-full transition-colors",
-                    value ? "bg-primary" : "bg-muted"
+                    "relative h-3.5 w-6 rounded-full transition-colors",
+                    value ? "bg-primary" : "bg-muted-foreground/30"
                 )}
             >
                 <span
                     className={cn(
-                        "absolute top-0.5 h-3 w-3 rounded-full bg-background shadow transition-all",
-                        value ? "left-[14px]" : "left-0.5"
+                        "absolute top-0.5 h-2.5 w-2.5 rounded-full bg-background shadow transition-all",
+                        value ? "left-[12px]" : "left-0.5"
                     )}
                 />
             </span>
