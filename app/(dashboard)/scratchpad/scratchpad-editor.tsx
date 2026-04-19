@@ -213,7 +213,21 @@ export function ScratchpadEditor({
                     aria-hidden
                     className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent opacity-0 transition-opacity duration-300 group-focus-within:opacity-100"
                 />
-                <div className="flex min-h-[60vh] font-mono text-[14px] leading-6">
+                <div
+                    className="flex min-h-[60vh] cursor-text font-mono text-[14px] leading-6"
+                    onMouseDown={(e) => {
+                        const ta = textareaRef.current;
+                        if (!ta || e.target === ta) return;
+                        const target = e.target as HTMLElement;
+                        if (target.closest("a")) return;
+                        const rect = ta.getBoundingClientRect();
+                        if (e.clientY <= rect.bottom) return;
+                        e.preventDefault();
+                        const end = ta.value.length;
+                        ta.focus();
+                        ta.setSelectionRange(end, end);
+                    }}
+                >
                     <div
                         aria-hidden
                         className="shrink-0 select-none border-r border-border/40 bg-muted/30 pt-4 pb-8 pl-4 pr-3 text-right text-muted-foreground/50 tabular-nums"
