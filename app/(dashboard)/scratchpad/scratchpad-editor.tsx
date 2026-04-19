@@ -5,16 +5,16 @@ import { Check, Loader2, CloudOff, Save } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
-const AUTOSAVE_STORAGE_KEY = "scratchpad:autosave";
-
 type SaveState = "idle" | "saving" | "saved" | "error";
 
 export function ScratchpadEditor({
     initialContent,
     initialUpdatedAt,
+    initialAutoSave,
 }: {
     initialContent: string;
     initialUpdatedAt: string;
+    initialAutoSave: boolean;
 }) {
     const [content, setContent] = useState(initialContent);
     const [state, setState] = useState<SaveState>("idle");
@@ -22,7 +22,7 @@ export function ScratchpadEditor({
     const [now, setNow] = useState<Date | null>(null);
     const [innerWidth, setInnerWidth] = useState(0);
     const [wrapCounts, setWrapCounts] = useState<number[]>([]);
-    const [autoSave, setAutoSave] = useState(true);
+    const [autoSave, setAutoSave] = useState(initialAutoSave);
     const [dirty, setDirty] = useState(false);
     const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -95,10 +95,6 @@ export function ScratchpadEditor({
         }
         setLastSaved(new Date(initialUpdatedAt));
         setNow(new Date());
-        try {
-            const stored = localStorage.getItem(AUTOSAVE_STORAGE_KEY);
-            if (stored !== null) setAutoSave(stored === "true");
-        } catch {}
         const id = setInterval(() => setNow(new Date()), 30_000);
         return () => {
             clearInterval(id);
@@ -107,16 +103,20 @@ export function ScratchpadEditor({
         };
     }, [initialUpdatedAt]);
 
-    useEffect(() => {
+    async function toggleAutoSave(next: boolean) {
+        setAutoSave(next);
         try {
-            localStorage.setItem(AUTOSAVE_STORAGE_KEY, String(autoSave));
+            await fetch("/api/scratchpad", {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ autoSave: next }),
+            });
         } catch {}
-        if (autoSave && dirty) {
+        if (next && dirty) {
             if (timerRef.current) clearTimeout(timerRef.current);
             flush();
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [autoSave]);
+    }
 
     useEffect(() => {
         const onKey = (e: KeyboardEvent) => {
@@ -187,7 +187,7 @@ export function ScratchpadEditor({
                     <p className="text-muted-foreground">Paste, think, come back later.</p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
-                    <AutoSaveToggle value={autoSave} onChange={setAutoSave} />
+                    <AutoSaveToggle value={autoSave} onChange={toggleAutoSave} />
                     {!autoSave && (
                         <Button
                             size="sm"

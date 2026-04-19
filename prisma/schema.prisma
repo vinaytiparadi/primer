@@ -111,6 +111,7 @@ model Scratchpad {
   id        String   @id @default(cuid())
   userId    String   @unique
   content   String   @default("") @db.Text
+  autoSave  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

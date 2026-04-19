@@ -17,6 +17,7 @@ export default async function ScratchpadPage() {
         <ScratchpadEditor
             initialContent={scratchpad.content}
             initialUpdatedAt={scratchpad.updatedAt.toISOString()}
+            initialAutoSave={scratchpad.autoSave}
         />
     );
 }
