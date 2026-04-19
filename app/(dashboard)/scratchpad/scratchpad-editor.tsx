@@ -239,6 +239,14 @@ export function ScratchpadEditor({
                             rows={Math.max(1, lineItems.length)}
                             value={content}
                             onChange={(e) => onChange(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === "Tab" && !e.shiftKey) {
+                                    e.preventDefault();
+                                    const ta = e.currentTarget;
+                                    ta.setRangeText("\t", ta.selectionStart, ta.selectionEnd, "end");
+                                    onChange(ta.value);
+                                }
+                            }}
                             placeholder="Start typing or paste anything here…"
                             className="block w-full resize-none bg-transparent pl-4 pr-5 pt-4 pb-8 outline-none text-transparent placeholder:text-muted-foreground/40 selection:bg-primary/20 break-all"
                             style={{ caretColor: "var(--color-foreground, currentColor)" }}
