@@ -1,8 +1,11 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { Check, Loader2, CloudOff } from "lucide-react";
+import { Check, Loader2, CloudOff, Save } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+
+const AUTOSAVE_STORAGE_KEY = "scratchpad:autosave";
 
 type SaveState = "idle" | "saving" | "saved" | "error";
 
@@ -19,6 +22,8 @@ export function ScratchpadEditor({
     const [now, setNow] = useState<Date | null>(null);
     const [innerWidth, setInnerWidth] = useState(0);
     const [wrapCounts, setWrapCounts] = useState<number[]>([]);
+    const [autoSave, setAutoSave] = useState(true);
+    const [dirty, setDirty] = useState(false);
     const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const latestContentRef = useRef(initialContent);
@@ -43,6 +48,7 @@ export function ScratchpadEditor({
             if (!res.ok) throw new Error("save failed");
             const data = await res.json();
             setLastSaved(data?.updatedAt ? new Date(data.updatedAt) : new Date());
+            setDirty(false);
             setState("saved");
             if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
             savedTimerRef.current = setTimeout(() => setState("idle"), 1500);
@@ -60,10 +66,23 @@ export function ScratchpadEditor({
     function onChange(value: string) {
         setContent(value);
         latestContentRef.current = value;
+        setDirty(true);
+        if (!autoSave) {
+            if (timerRef.current) clearTimeout(timerRef.current);
+            return;
+        }
         setState("saving");
         if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
         if (timerRef.current) clearTimeout(timerRef.current);
         timerRef.current = setTimeout(flush, 600);
+    }
+
+    function saveNow() {
+        if (timerRef.current) {
+            clearTimeout(timerRef.current);
+            timerRef.current = null;
+        }
+        flush();
     }
 
     useEffect(() => {
@@ -76,6 +95,10 @@ export function ScratchpadEditor({
         }
         setLastSaved(new Date(initialUpdatedAt));
         setNow(new Date());
+        try {
+            const stored = localStorage.getItem(AUTOSAVE_STORAGE_KEY);
+            if (stored !== null) setAutoSave(stored === "true");
+        } catch {}
         const id = setInterval(() => setNow(new Date()), 30_000);
         return () => {
             clearInterval(id);
@@ -83,6 +106,29 @@ export function ScratchpadEditor({
             if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
         };
     }, [initialUpdatedAt]);
+
+    useEffect(() => {
+        try {
+            localStorage.setItem(AUTOSAVE_STORAGE_KEY, String(autoSave));
+        } catch {}
+        if (autoSave && dirty) {
+            if (timerRef.current) clearTimeout(timerRef.current);
+            flush();
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [autoSave]);
+
+    useEffect(() => {
+        const onKey = (e: KeyboardEvent) => {
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") {
+                e.preventDefault();
+                if (dirty) saveNow();
+            }
+        };
+        window.addEventListener("keydown", onKey);
+        return () => window.removeEventListener("keydown", onKey);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [dirty]);
 
     useEffect(() => {
         const ta = textareaRef.current;
@@ -135,12 +181,26 @@ export function ScratchpadEditor({
 
     return (
         <div className="flex flex-col">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-6">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight">Scratchpad</h1>
                     <p className="text-muted-foreground">Paste, think, come back later.</p>
                 </div>
-                <SaveIndicator state={state} />
+                <div className="flex flex-wrap items-center gap-2">
+                    <AutoSaveToggle value={autoSave} onChange={setAutoSave} />
+                    {!autoSave && (
+                        <Button
+                            size="sm"
+                            onClick={saveNow}
+                            disabled={!dirty || state === "saving"}
+                            className="h-7 gap-1.5 text-xs"
+                        >
+                            <Save className="h-3 w-3" />
+                            {state === "saving" ? "Saving" : "Save"}
+                        </Button>
+                    )}
+                    <SaveIndicator state={state} dirty={dirty} autoSave={autoSave} />
+                </div>
             </div>
 
             <div className="group relative overflow-hidden rounded-2xl bg-card/60 ring-1 ring-border/60 shadow-sm backdrop-blur-sm transition-all duration-200 focus-within:ring-primary/30 focus-within:shadow-md">
@@ -266,7 +326,15 @@ function formatSaved(when: Date, now: Date): string {
     return `${date}, ${time}`;
 }
 
-function SaveIndicator({ state }: { state: SaveState }) {
+function SaveIndicator({
+    state,
+    dirty,
+    autoSave,
+}: {
+    state: SaveState;
+    dirty: boolean;
+    autoSave: boolean;
+}) {
     const base = "inline-flex w-fit items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-colors";
 
     if (state === "saving") {
@@ -293,5 +361,46 @@ function SaveIndicator({ state }: { state: SaveState }) {
             </span>
         );
     }
+    if (!autoSave && dirty) {
+        return (
+            <span className={cn(base, "bg-amber-500/10 text-amber-700 dark:text-amber-400")}>
+                <CloudOff className="h-3 w-3" />
+                Unsaved
+            </span>
+        );
+    }
     return null;
+}
+
+function AutoSaveToggle({
+    value,
+    onChange,
+}: {
+    value: boolean;
+    onChange: (v: boolean) => void;
+}) {
+    return (
+        <label className="inline-flex cursor-pointer select-none items-center gap-2 rounded-full border border-border/60 bg-card/60 px-3 py-1 text-xs text-muted-foreground transition-colors hover:text-foreground">
+            <span>Auto-save</span>
+            <span
+                className={cn(
+                    "relative h-4 w-7 rounded-full transition-colors",
+                    value ? "bg-primary" : "bg-muted"
+                )}
+            >
+                <span
+                    className={cn(
+                        "absolute top-0.5 h-3 w-3 rounded-full bg-background shadow transition-all",
+                        value ? "left-[14px]" : "left-0.5"
+                    )}
+                />
+            </span>
+            <input
+                type="checkbox"
+                className="sr-only"
+                checked={value}
+                onChange={(e) => onChange(e.target.checked)}
+            />
+        </label>
+    );
 }
