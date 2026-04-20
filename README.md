@@ -45,8 +45,7 @@ Primer is a specialized, mobile-responsive prompt management application designe
 3. Set up environment variables — create a `.env` file:
    ```bash
    DATABASE_URL="postgresql://user:password@host:port/dbname?sslmode=require"
-   NEXTAUTH_SECRET="your-secret-key"
-   NEXTAUTH_URL="http://localhost:3000"
+   AUTH_SECRET="your-secret-key"
    GOOGLE_CLIENT_ID="your-google-client-id"
    GOOGLE_CLIENT_SECRET="your-google-client-secret"
    ```
